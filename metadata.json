@@ -1,0 +1,5 @@
+{
+  "name": "DataFlow Dashboard",
+  "description": "A secure data visualization dashboard integrating Google Sheets and Neon PostgreSQL with role-based access.",
+  "requestFramePermissions": []
+}
