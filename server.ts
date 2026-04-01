@@ -243,6 +243,14 @@ async function startServer() {
       const abiertosRes = await pool.query(abiertosQuery, queryParamsAbiertos);
       const abiertosCount = parseInt(abiertosRes.rows[0].count);
 
+      // 1.05 Count from Abiertos where "Contact Reason Area" = 'Parts'
+      const partsWhere = abiertosWhere + ' AND TRIM("Contact Reason Area") = \'Parts\'';
+      const partsQuery = `SELECT COUNT(*) FROM "Abiertos" ${partsWhere}`;
+      console.log(`Querying Parts: ${partsQuery} with params ${queryParamsAbiertos}`);
+      const partsRes = await pool.query(partsQuery, queryParamsAbiertos);
+      const partsCount = parseInt(partsRes.rows[0].count);
+      const partsPercentage = abiertosCount > 0 ? (partsCount / abiertosCount) * 100 : 0;
+
       // 1.1 Count from Cerrados
       const cerradosQuery = `SELECT COUNT(*) FROM "Cerrados" ${cerradosWhere}`;
       console.log(`Querying Cerrados: ${cerradosQuery} with params ${queryParamsCerrados}`);
@@ -419,33 +427,33 @@ async function startServer() {
       ]);
 
       // Merge time-series data
-      const dateMap: Record<string, { date: string; open: number; closed: number; aunAbiertos: number; incoming: number; outgoing: number; qa: number }> = {};
+      const dateMap: Record<string, { date: string; open: number; closed: number; aunAbiertos: number; incoming: number; outgoing: number; qa?: number }> = {};
       
       abiertosTS.rows.forEach(row => {
         const dateStr = row.date ? new Date(row.date).toISOString().split('T')[0] : 'Unknown';
-        if (!dateMap[dateStr]) dateMap[dateStr] = { date: dateStr, open: 0, closed: 0, aunAbiertos: 0, incoming: 0, outgoing: 0, qa: 0 };
-        dateMap[dateStr].open = parseInt(row.count);
+        if (!dateMap[dateStr]) dateMap[dateStr] = { date: dateStr, open: 0, closed: 0, aunAbiertos: 0, incoming: 0, outgoing: 0 };
+        dateMap[dateStr].open = parseInt(row.count || 0);
       });
-
+ 
       cerradosTS.rows.forEach(row => {
         const dateStr = row.date ? new Date(row.date).toISOString().split('T')[0] : 'Unknown';
-        if (!dateMap[dateStr]) dateMap[dateStr] = { date: dateStr, open: 0, closed: 0, aunAbiertos: 0, incoming: 0, outgoing: 0, qa: 0 };
-        dateMap[dateStr].closed = parseInt(row.count);
+        if (!dateMap[dateStr]) dateMap[dateStr] = { date: dateStr, open: 0, closed: 0, aunAbiertos: 0, incoming: 0, outgoing: 0 };
+        dateMap[dateStr].closed = parseInt(row.count || 0);
       });
-
+ 
       aunAbiertosTS.rows.forEach(row => {
         const dateStr = row.date ? new Date(row.date).toISOString().split('T')[0] : 'Unknown';
-        if (!dateMap[dateStr]) dateMap[dateStr] = { date: dateStr, open: 0, closed: 0, aunAbiertos: 0, incoming: 0, outgoing: 0, qa: 0 };
-        dateMap[dateStr].aunAbiertos = parseInt(row.count);
+        if (!dateMap[dateStr]) dateMap[dateStr] = { date: dateStr, open: 0, closed: 0, aunAbiertos: 0, incoming: 0, outgoing: 0 };
+        dateMap[dateStr].aunAbiertos = parseInt(row.count || 0);
       });
-
+ 
       rendimientoTS.rows.forEach(row => {
         const dateStr = row.date ? new Date(row.date).toISOString().split('T')[0] : 'Unknown';
-        if (!dateMap[dateStr]) dateMap[dateStr] = { date: dateStr, open: 0, closed: 0, aunAbiertos: 0, incoming: 0, outgoing: 0, qa: 0 };
+        if (!dateMap[dateStr]) dateMap[dateStr] = { date: dateStr, open: 0, closed: 0, aunAbiertos: 0, incoming: 0, outgoing: 0 };
         dateMap[dateStr].incoming = parseFloat(row.incoming || 0);
         dateMap[dateStr].outgoing = parseFloat(row.outgoing || 0);
       });
-
+ 
       qaTS.rows.forEach(row => {
         const dateStr = row.date ? new Date(row.date).toISOString().split('T')[0] : 'Unknown';
         if (!dateMap[dateStr]) dateMap[dateStr] = { date: dateStr, open: 0, closed: 0, aunAbiertos: 0, incoming: 0, outgoing: 0, qa: 0 };
@@ -459,6 +467,7 @@ async function startServer() {
         cerrados: cerradosCount,
         aunAbiertos: aunAbiertosCount,
         backlog: backlog,
+        partsPercentage: partsPercentage,
         contestadas: parseFloat(rendimientoRes.rows[0]?.total_contestadas || 0),
         manejo: parseFloat(rendimientoRes.rows[0]?.total_manejo || 0),
         qa: qaScore !== null ? qaScore : 0,
