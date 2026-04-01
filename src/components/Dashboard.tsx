@@ -303,12 +303,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
 
         {/* Main Content */}
         <main className="flex-1 p-4 md:p-6 space-y-4 overflow-y-auto bg-white/5 backdrop-blur-sm custom-scrollbar relative">
-          {/* HUD Scanline Overlay */}
-          <div className="hud-scanline pointer-events-none" />
-          
           <header className="flex flex-col md:flex-row md:items-center justify-between gap-2 relative z-10">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight neon-glow">Welcome back, {user.name}</h2>
+              <h2 className="text-2xl font-bold tracking-tight">Welcome back, {user.name}</h2>
               <p className="text-[10px] font-mono text-blue-400/60 uppercase tracking-widest">
                 AUTH_ID: {user.rfc.substring(0, 8)}... // SESSION_ACTIVE // ROLE: {translateRole(user.vistaDash).toUpperCase()}
               </p>
@@ -317,10 +314,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
               <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full text-[10px] font-mono text-blue-400">
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
                 NODE_COMPASS: {user.compass}
-              </div>
-              <div className="hidden md:block text-[9px] font-mono text-white/20 text-right">
-                LAT: 4.7110° N<br/>
-                LON: 74.0721° W
               </div>
             </div>
           </header>

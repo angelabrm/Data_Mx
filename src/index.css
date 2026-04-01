@@ -51,28 +51,6 @@
     pointer-events: none;
     z-index: -1;
   }
-
-  body::after {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-      rgba(18, 16, 16, 0) 50%,
-      rgba(0, 0, 0, 0.1) 50%
-    ), linear-gradient(
-      90deg,
-      rgba(255, 0, 0, 0.02),
-      rgba(0, 255, 0, 0.01),
-      rgba(0, 0, 255, 0.02)
-    );
-    background-size: 100% 4px, 3px 100%;
-    pointer-events: none;
-    z-index: 1000;
-    opacity: 0.3;
-  }
 }
 
 .glass-card {
@@ -116,44 +94,8 @@
   border-top: none;
 }
 
-.hud-scanline {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(59, 130, 246, 0.05) 50%,
-    transparent 100%
-  );
-  background-size: 100% 4px;
-  position: absolute;
-  top: 0;
-  left: 0;
-  animation: scanline 10s linear infinite;
-  pointer-events: none;
-  z-index: 10;
-  opacity: 0.5;
-}
-
-@keyframes scanline {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100%); }
-}
-
 .neon-glow {
   text-shadow: 0 0 10px rgba(59, 130, 246, 0.8), 0 0 20px rgba(59, 130, 246, 0.3);
-  animation: flicker 5s infinite;
-}
-
-@keyframes flicker {
-  0%, 18%, 22%, 25%, 53%, 57%, 100% {
-    opacity: 1;
-    text-shadow: 0 0 10px rgba(59, 130, 246, 0.8), 0 0 20px rgba(59, 130, 246, 0.3);
-  }
-  20%, 24%, 55% {
-    opacity: 0.7;
-    text-shadow: none;
-  }
 }
 
 .custom-scrollbar::-webkit-scrollbar {
