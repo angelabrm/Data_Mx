@@ -192,27 +192,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
   }
 
   return (
-    <div className="min-h-screen text-white flex items-center justify-center p-4 md:p-8 overflow-hidden"
-      style={{
-        background: "radial-gradient(circle at 20% 20%, #1a2a6c, #0b1020 60%)"
-      }}
-    >
+    <div className="h-screen w-screen text-white flex items-center justify-center overflow-hidden">
       <div className="w-full max-w-[177.78vh] aspect-video bg-white/5 backdrop-blur-xl rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row border border-white/10">
         {/* Sidebar */}
-        <aside className="w-full md:w-64 border-r border-white/10 p-6 flex flex-col bg-white/5 backdrop-blur-md shrink-0">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-10 h-10 bg-blue-500/30 rounded-xl flex items-center justify-center shrink-0 border border-blue-500/20">
-              <BarChart3 className="text-blue-400 w-6 h-6" />
+        <aside className="w-full md:w-56 border-r border-white/10 p-4 flex flex-col bg-white/5 backdrop-blur-md shrink-0">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-8 h-8 bg-blue-500/30 rounded-xl flex items-center justify-center shrink-0 border border-blue-500/20">
+              <BarChart3 className="text-blue-400 w-5 h-5" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-xl leading-none tracking-tight text-white">ORBIT</span>
-              <span className="text-[7px] leading-tight text-blue-400/60 font-bold uppercase tracking-[0.15em]">
+              <span className="font-bold text-lg leading-none tracking-tight text-white">ORBIT</span>
+              <span className="text-[6px] leading-tight text-blue-400/60 font-bold uppercase tracking-[0.15em]">
                 Organizational Report of Business Insights and Trends
               </span>
             </div>
           </div>
 
-          <nav className="flex-1 space-y-2 overflow-y-auto pr-2 custom-scrollbar">
+          <nav className="flex-1 space-y-1.5 overflow-y-auto pr-1 no-scrollbar">
             {navOptions.map((option) => {
               const isActive = (isManager && managerView === option) || (isDirectivo && directivoView === option);
               return (
@@ -221,47 +217,47 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                   onClick={() => handleNavClick(option)}
                   whileHover={{ x: 4, backgroundColor: isActive ? "" : "rgba(59, 130, 246, 0.15)" }}
                   whileTap={{ scale: 0.97 }}
-                  className={`relative w-full flex items-center gap-3 px-4 py-2 rounded-full text-xs font-medium transition-all text-left outline-none ${
+                  className={`relative w-full flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-medium transition-all text-left outline-none ${
                     isActive ? "text-white bg-blue-500/40 shadow-[0_0_15px_rgba(59,130,246,0.5)]" : "text-white/60 bg-blue-500/10 hover:bg-blue-500/20"
                   }`}
                 >
-                  <LayoutDashboard className={`relative z-10 w-3.5 h-3.5 ${isActive ? "text-white" : ""}`} />
+                  <LayoutDashboard className={`relative z-10 w-3 h-3 ${isActive ? "text-white" : ""}`} />
                   <span className="relative z-10">{option}</span>
                 </motion.button>
               );
             })}
 
-            <div className="pt-4 pb-2">
-              <h3 className="text-[9px] uppercase tracking-wider text-muted font-bold px-3 mb-2">Date Filter</h3>
-              <div className="px-3 space-y-2">
-                <div className="space-y-1">
-                  <label className="text-[9px] text-muted font-medium">Start Date</label>
+            <div className="pt-3 pb-1">
+              <h3 className="text-[8px] uppercase tracking-wider text-muted font-bold px-2 mb-1.5">Date Filter</h3>
+              <div className="px-2 space-y-1.5">
+                <div className="space-y-0.5">
+                  <label className="text-[8px] text-muted font-medium">Start Date</label>
                   <div className="relative">
-                    <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted" />
+                    <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 w-2.5 h-2.5 text-muted" />
                     <input 
                       type="date" 
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-md pl-7 pr-2 py-1 text-[10px] focus:ring-1 focus:ring-blue-500 outline-none text-white"
+                      className="w-full bg-white/5 border border-white/10 rounded-md pl-6 pr-1 py-0.5 text-[9px] focus:ring-1 focus:ring-blue-500 outline-none text-white"
                     />
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[9px] text-white/60 font-medium">End Date</label>
+                <div className="space-y-0.5">
+                  <label className="text-[8px] text-white/60 font-medium">End Date</label>
                   <div className="relative">
-                    <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-white/40" />
+                    <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 w-2.5 h-2.5 text-white/40" />
                     <input 
                       type="date" 
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-md pl-7 pr-2 py-1 text-[10px] focus:ring-1 focus:ring-blue-500 outline-none text-white"
+                      className="w-full bg-white/5 border border-white/10 rounded-md pl-6 pr-1 py-0.5 text-[9px] focus:ring-1 focus:ring-blue-500 outline-none text-white"
                     />
                   </div>
                 </div>
                 {(startDate || endDate) && (
                   <button 
                     onClick={() => { setStartDate(''); setEndDate(''); }}
-                    className="text-[9px] text-blue-400 hover:underline"
+                    className="text-[8px] text-blue-400 hover:underline"
                   >
                     Clear filters
                   </button>
@@ -270,13 +266,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
             </div>
 
             {(isLeader || isManager) && (
-              <div className="pt-4 pb-2">
-                <h3 className="text-[9px] uppercase tracking-wider text-muted font-bold px-3 mb-2">Agent Slicer</h3>
-                <div className="px-3">
+              <div className="pt-3 pb-1">
+                <h3 className="text-[8px] uppercase tracking-wider text-muted font-bold px-2 mb-1.5">Agent Slicer</h3>
+                <div className="px-2">
                   <select
                     value={selectedAgent}
                     onChange={(e) => setSelectedAgent(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-md px-2 py-1 text-[10px] focus:ring-1 focus:ring-blue-500 outline-none text-white appearance-none cursor-pointer"
+                    className="w-full bg-white/5 border border-white/10 rounded-md px-2 py-0.5 text-[9px] focus:ring-1 focus:ring-blue-500 outline-none text-white appearance-none cursor-pointer"
                   >
                     <option value="all" className="bg-[#0b1020] text-white">All Agents (Sum)</option>
                     {teamMembers.map((member) => (
@@ -290,51 +286,51 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
             )}
           </nav>
 
-          <div className="mt-auto pt-4 space-y-2 border-t border-white/10">
+          <div className="mt-auto pt-3 space-y-1.5 border-t border-white/10">
             <button
               onClick={onLogout}
-              className="w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-xs font-medium text-red-500 hover:bg-red-500/10 transition-colors"
+              className="w-full flex items-center gap-2 px-2 py-1 rounded-lg text-[10px] font-medium text-red-500 hover:bg-red-500/10 transition-colors"
             >
-              <LogOut className="w-3.5 h-3.5" />
+              <LogOut className="w-3 h-3" />
               Sign Out
             </button>
           </div>
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 md:p-6 space-y-4 overflow-y-auto bg-white/5 backdrop-blur-sm custom-scrollbar relative">
-          <header className="flex flex-col md:flex-row md:items-center justify-between gap-2 relative z-10">
+        <main className="flex-1 p-4 md:p-5 space-y-3 overflow-hidden bg-white/5 backdrop-blur-sm no-scrollbar relative">
+          <header className="flex flex-col md:flex-row md:items-center justify-between gap-1 relative z-10">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight">Welcome back, {user.name}</h2>
-              <p className="text-[10px] font-mono text-blue-400/60 uppercase tracking-widest">
+              <h2 className="text-xl font-bold tracking-tight">Welcome back, {user.name}</h2>
+              <p className="text-[8px] font-mono text-blue-400/60 uppercase tracking-widest">
                 AUTH_ID: {user.rfc.substring(0, 8)}... // SESSION_ACTIVE // ROLE: {translateRole(user.vistaDash).toUpperCase()}
               </p>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full text-[10px] font-mono text-blue-400">
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-[8px] font-mono text-blue-400">
+                <div className="w-1 h-1 rounded-full bg-blue-400 animate-pulse" />
                 NODE_COMPASS: {user.compass}
               </div>
             </div>
           </header>
 
           {/* Main Dashboard Grid */}
-          <div className="flex flex-col lg:flex-row gap-6 relative z-10">
+          <div className="flex flex-col lg:flex-row gap-4 relative z-10 h-[calc(100%-4rem)]">
             {/* Left Column: Stats and Charts */}
-            <div className="flex-1 space-y-6">
+            <div className="flex-1 flex flex-col gap-4 min-h-0">
               {/* Stats Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 shrink-0">
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
-                  className="glass-card p-4 flex items-center gap-4"
+                  className="glass-card p-3 flex items-center gap-3"
                 >
-                  <div className="w-12 h-12 rounded-full border-[4px] border-blue-400 flex items-center justify-center text-sm font-bold shadow-[0_0_10px_rgba(59,130,246,0.5)] shrink-0">
+                  <div className="w-10 h-10 rounded-full border-[3px] border-blue-400 flex items-center justify-center text-xs font-bold shadow-[0_0_10px_rgba(59,130,246,0.5)] shrink-0">
                     {loading ? "..." : data?.abiertos ?? 0}
                   </div>
                   <div>
-                    <p className="text-[9px] uppercase tracking-wider text-white/60 font-bold">Opened Cases</p>
+                    <p className="text-[8px] uppercase tracking-wider text-white/60 font-bold">Opened Cases</p>
                   </div>
                 </motion.div>
 
@@ -342,13 +338,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.15 }}
-                  className="glass-card p-4 flex items-center gap-4"
+                  className="glass-card p-3 flex items-center gap-3"
                 >
-                  <div className="w-12 h-12 rounded-full border-[4px] border-emerald-400 flex items-center justify-center text-sm font-bold shadow-[0_0_10px_rgba(52,211,153,0.5)] shrink-0">
+                  <div className="w-10 h-10 rounded-full border-[3px] border-emerald-400 flex items-center justify-center text-xs font-bold shadow-[0_0_10px_rgba(52,211,153,0.5)] shrink-0">
                     {loading ? "..." : data?.cerrados ?? 0}
                   </div>
                   <div>
-                    <p className="text-[9px] uppercase tracking-wider text-white/60 font-bold">Closed Cases</p>
+                    <p className="text-[8px] uppercase tracking-wider text-white/60 font-bold">Closed Cases</p>
                   </div>
                 </motion.div>
 
@@ -356,13 +352,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.19 }}
-                  className="glass-card p-4 flex items-center gap-4"
+                  className="glass-card p-3 flex items-center gap-3"
                 >
-                  <div className="w-12 h-12 rounded-full border-[4px] border-amber-400 flex items-center justify-center text-sm font-bold shadow-[0_0_10px_rgba(251,191,36,0.5)] shrink-0">
+                  <div className="w-10 h-10 rounded-full border-[3px] border-amber-400 flex items-center justify-center text-xs font-bold shadow-[0_0_10px_rgba(251,191,36,0.5)] shrink-0">
                     {loading ? "..." : typeof data?.backlog === 'number' ? `${(data.backlog * 100).toFixed(0)}%` : "0%"}
                   </div>
                   <div>
-                    <p className="text-[9px] uppercase tracking-wider text-white/60 font-bold">Backlog</p>
+                    <p className="text-[8px] uppercase tracking-wider text-white/60 font-bold">Backlog</p>
                   </div>
                 </motion.div>
 
@@ -370,46 +366,46 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="glass-card p-4 flex items-center gap-4"
+                  className="glass-card p-3 flex items-center gap-3"
                 >
-                  <div className="w-12 h-12 rounded-full border-[4px] border-purple-400 flex items-center justify-center text-sm font-bold shadow-[0_0_10px_rgba(168,85,247,0.5)] shrink-0">
+                  <div className="w-10 h-10 rounded-full border-[3px] border-purple-400 flex items-center justify-center text-xs font-bold shadow-[0_0_10px_rgba(168,85,247,0.5)] shrink-0">
                     {loading ? "..." : typeof data?.qa === 'number' ? `${data.qa.toFixed(0)}%` : "0%"}
                   </div>
                   <div>
-                    <p className="text-[9px] uppercase tracking-wider text-white/60 font-bold">QA Score</p>
+                    <p className="text-[8px] uppercase tracking-wider text-white/60 font-bold">QA Score</p>
                   </div>
                 </motion.div>
               </div>
 
               {/* Charts Section */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-3 min-h-0">
                 {/* Cases Chart */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
-                  className="glass-card p-4"
+                  className="glass-card p-3 flex flex-col"
                 >
-                  <h3 className="text-xs font-bold mb-4 text-white uppercase tracking-widest flex justify-between items-center">
+                  <h3 className="text-[10px] font-bold mb-2 text-white uppercase tracking-widest flex justify-between items-center shrink-0">
                     <span>Cases Over Time</span>
-                    <span className="text-[8px] text-white/20 font-mono">DATA_STREAM_01</span>
+                    <span className="text-[7px] text-white/20 font-mono">DATA_STREAM_01</span>
                   </h3>
-                  <div className="h-[180px] w-full">
+                  <div className="flex-1 w-full min-h-0">
                     {loading ? (
                       <div className="w-full h-full flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
                       </div>
                     ) : data?.chartData && data.chartData.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart
                           data={data.chartData}
-                          margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+                          margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
                         >
                           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.05)" />
                           <XAxis 
                             dataKey="date" 
                             stroke="rgba(255, 255, 255, 0.4)"
-                            fontSize={9}
+                            fontSize={8}
                             tickFormatter={(str) => {
                               try {
                                 const date = new Date(str);
@@ -421,14 +417,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                           />
                           <YAxis 
                             stroke="rgba(255, 255, 255, 0.4)"
-                            fontSize={9}
+                            fontSize={8}
                           />
                           <Tooltip 
                             contentStyle={{ 
                               backgroundColor: '#1a1a1a',
                               border: '1px solid rgba(255, 255, 255, 0.1)',
                               borderRadius: '8px',
-                              fontSize: '9px',
+                              fontSize: '8px',
                               color: '#ffffff'
                             }}
                           />
@@ -437,23 +433,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                             dataKey="open" 
                             name="Open" 
                             stroke="#60a5fa" 
-                            strokeWidth={2}
-                            dot={{ r: 3, fill: '#60a5fa', strokeWidth: 0 }}
-                            activeDot={{ r: 5, strokeWidth: 0 }}
+                            strokeWidth={1.5}
+                            dot={{ r: 2, fill: '#60a5fa', strokeWidth: 0 }}
+                            activeDot={{ r: 4, strokeWidth: 0 }}
                           />
                           <Line 
                             type="monotone" 
                             dataKey="closed" 
                             name="Closed" 
                             stroke="#34d399" 
-                            strokeWidth={2}
-                            dot={{ r: 3, fill: '#34d399', strokeWidth: 0 }}
-                            activeDot={{ r: 5, strokeWidth: 0 }}
+                            strokeWidth={1.5}
+                            dot={{ r: 2, fill: '#34d399', strokeWidth: 0 }}
+                            activeDot={{ r: 4, strokeWidth: 0 }}
                           />
                         </LineChart>
                       </ResponsiveContainer>
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[9px] text-white/40">
+                      <div className="w-full h-full flex items-center justify-center text-[8px] text-white/40">
                         No chart data available
                       </div>
                     )}
@@ -465,28 +461,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
-                  className="glass-card p-4"
+                  className="glass-card p-3 flex flex-col"
                 >
-                  <h3 className="text-xs font-bold mb-4 text-white uppercase tracking-widest flex justify-between items-center">
+                  <h3 className="text-[10px] font-bold mb-2 text-white uppercase tracking-widest flex justify-between items-center shrink-0">
                     <span>Calls Over Time</span>
-                    <span className="text-[8px] text-white/20 font-mono">DATA_STREAM_02</span>
+                    <span className="text-[7px] text-white/20 font-mono">DATA_STREAM_02</span>
                   </h3>
-                  <div className="h-[180px] w-full">
+                  <div className="flex-1 w-full min-h-0">
                     {loading ? (
                       <div className="w-full h-full flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
                       </div>
                     ) : data?.chartData && data.chartData.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart
                           data={data.chartData}
-                          margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+                          margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
                         >
                           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.05)" />
                           <XAxis 
                             dataKey="date" 
                             stroke="rgba(255, 255, 255, 0.4)"
-                            fontSize={9}
+                            fontSize={8}
                             tickFormatter={(str) => {
                               try {
                                 const date = new Date(str);
@@ -498,14 +494,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                           />
                           <YAxis 
                             stroke="rgba(255, 255, 255, 0.4)"
-                            fontSize={9}
+                            fontSize={8}
                           />
                           <Tooltip 
                             contentStyle={{ 
                               backgroundColor: '#1a1a1a',
                               border: '1px solid rgba(255, 255, 255, 0.1)',
                               borderRadius: '8px',
-                              fontSize: '9px',
+                              fontSize: '8px',
                               color: '#ffffff'
                             }}
                           />
@@ -514,23 +510,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                             dataKey="incoming" 
                             name="Incoming" 
                             stroke="#f59e0b" 
-                            strokeWidth={2}
-                            dot={{ r: 3, fill: '#f59e0b', strokeWidth: 0 }}
-                            activeDot={{ r: 5, strokeWidth: 0 }}
+                            strokeWidth={1.5}
+                            dot={{ r: 2, fill: '#f59e0b', strokeWidth: 0 }}
+                            activeDot={{ r: 4, strokeWidth: 0 }}
                           />
                           <Line 
                             type="monotone" 
                             dataKey="outgoing" 
                             name="Outgoing" 
                             stroke="#8b5cf6" 
-                            strokeWidth={2}
-                            dot={{ r: 3, fill: '#8b5cf6', strokeWidth: 0 }}
-                            activeDot={{ r: 5, strokeWidth: 0 }}
+                            strokeWidth={1.5}
+                            dot={{ r: 2, fill: '#8b5cf6', strokeWidth: 0 }}
+                            activeDot={{ r: 4, strokeWidth: 0 }}
                           />
                         </LineChart>
                       </ResponsiveContainer>
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[9px] text-white/40">
+                      <div className="w-full h-full flex items-center justify-center text-[8px] text-white/40">
                         No chart data available
                       </div>
                     )}
@@ -542,28 +538,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6 }}
-                  className="lg:col-span-2 glass-card p-4"
+                  className="lg:col-span-2 glass-card p-3 flex flex-col"
                 >
-                  <h3 className="text-xs font-bold mb-4 text-white uppercase tracking-widest flex justify-between items-center">
+                  <h3 className="text-[10px] font-bold mb-2 text-white uppercase tracking-widest flex justify-between items-center shrink-0">
                     <span>QA Score Over Time</span>
-                    <span className="text-[8px] text-white/20 font-mono">DATA_STREAM_03</span>
+                    <span className="text-[7px] text-white/20 font-mono">DATA_STREAM_03</span>
                   </h3>
-                  <div className="h-[180px] w-full">
+                  <div className="flex-1 w-full min-h-0">
                     {loading ? (
                       <div className="w-full h-full flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
                       </div>
                     ) : data?.chartData && data.chartData.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart
                           data={data.chartData.filter(d => d.qa !== undefined)}
-                          margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+                          margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
                         >
                           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.05)" />
                           <XAxis 
                             dataKey="date" 
                             stroke="rgba(255, 255, 255, 0.4)"
-                            fontSize={9}
+                            fontSize={8}
                             tickFormatter={(str) => {
                               try {
                                 const date = new Date(str);
@@ -575,7 +571,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                           />
                           <YAxis 
                             stroke="rgba(255, 255, 255, 0.4)"
-                            fontSize={9}
+                            fontSize={8}
                             domain={[0, 100]}
                           />
                           <Tooltip 
@@ -583,7 +579,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                               backgroundColor: '#1a1a1a',
                               border: '1px solid rgba(255, 255, 255, 0.1)',
                               borderRadius: '8px',
-                              fontSize: '9px',
+                              fontSize: '8px',
                               color: '#ffffff'
                             }}
                           />
@@ -592,14 +588,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                             dataKey="qa" 
                             name="QA Score" 
                             stroke="#ec4899" 
-                            strokeWidth={2}
-                            dot={{ r: 3, fill: '#ec4899', strokeWidth: 0 }}
-                            activeDot={{ r: 5, strokeWidth: 0 }}
+                            strokeWidth={1.5}
+                            dot={{ r: 2, fill: '#ec4899', strokeWidth: 0 }}
+                            activeDot={{ r: 4, strokeWidth: 0 }}
                           />
                         </LineChart>
                       </ResponsiveContainer>
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[9px] text-white/40">
+                      <div className="w-full h-full flex items-center justify-center text-[8px] text-white/40">
                         No chart data available
                       </div>
                     )}
@@ -609,7 +605,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
             </div>
 
             {/* Right Column: Gauges (Airplane Dashboard Style) */}
-            <div className="w-full lg:w-48 space-y-4">
+            <div className="w-full lg:w-40 space-y-3 shrink-0">
               {(() => {
                 const closedRate = data?.abiertos && data.abiertos > 0 
                   ? (data.cerrados / data.abiertos) * 100 
@@ -639,14 +635,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                       color="#10b981" 
                       delay={0.3}
                     />
-                    <div className="glass-card p-4 flex flex-col items-center justify-center border-dashed border-white/10">
-                      <div className="text-[8px] uppercase tracking-widest text-white/30 font-bold mb-2">System Status</div>
+                    <div className="glass-card p-3 flex flex-col items-center justify-center border-dashed border-white/10">
+                      <div className="text-[7px] uppercase tracking-widest text-white/30 font-bold mb-1.5">System Status</div>
                       <div className="flex gap-1">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/30" />
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/30" />
+                        <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                        <div className="w-1 h-1 rounded-full bg-emerald-500/30" />
+                        <div className="w-1 h-1 rounded-full bg-emerald-500/30" />
                       </div>
-                      <div className="mt-2 text-[7px] font-mono text-white/20 uppercase">All systems nominal</div>
+                      <div className="mt-1.5 text-[6px] font-mono text-white/20 uppercase">All systems nominal</div>
                     </div>
                   </>
                 );
