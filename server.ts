@@ -5,6 +5,7 @@ import pg from "pg";
 import dotenv from "dotenv";
 import path from "path";
 import cors from "cors";
+import geminiHandler from "./api/gemini.js";
 
 dotenv.config();
 
@@ -130,6 +131,8 @@ async function startServer() {
       res.status(500).json({ error: "Internal server error" });
     }
   });
+
+  app.post("/api/gemini", geminiHandler);
 
   app.get("/api/dashboard-data", async (req, res) => {
     const { rfc, compass, genesys, qa, startDate, endDate, vistaDash } = req.query;
