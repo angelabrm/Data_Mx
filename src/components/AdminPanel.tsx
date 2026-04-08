@@ -1,534 +1,256 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
 import { 
-  Users, 
-  Layout, 
+  Save, 
   Plus, 
   Trash2, 
-  Save, 
-  Settings, 
-  ChevronRight,
-  Shield,
-  UserPlus
+  Database, 
+  ChevronRight, 
+  Layout, 
+  Users, 
+  Settings,
+  AlertCircle,
+  CheckCircle2
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
-interface Client {
-  id: number;
-  name: string;
-}
-
-interface ServiceDesk {
-  id: number;
-  client_id: number;
-  name: string;
-}
-
-interface Role {
-  id: number;
-  service_desk_id: number;
-  name: string;
-  client_name?: string;
-  service_desk_name?: string;
-}
-
-interface View {
-  id: number;
-  role_id: number;
-  name: string;
-  order_index: number;
-}
-
-interface Component {
-  id: number;
-  view_id: number;
-  type: string;
-  title: string;
-  config: any;
-  order_index: number;
-}
-
-interface Override {
-  rfc: string;
-  role_id: number | null;
-  is_admin: boolean;
-  role_name?: string;
-  client_name?: string;
-  service_desk_name?: string;
-}
-
-export const AdminPanel: React.FC = () => {
-  const [clients, setClients] = useState<Client[]>([]);
-  const [serviceDesks, setServiceDesks] = useState<ServiceDesk[]>([]);
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [views, setViews] = useState<View[]>([]);
-  const [components, setComponents] = useState<Component[]>([]);
-  const [overrides, setOverrides] = useState<Override[]>([]);
+export default function AdminPanel() {
+  const [config, setConfig] = useState<any>({
+    clients: [],
+    serviceDesks: [],
+    roles: [],
+    overrides: []
+  });
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'roles' | 'users'>('roles');
-  
-  const [selectedClient, setSelectedClient] = useState<number | null>(null);
-  const [selectedServiceDesk, setSelectedServiceDesk] = useState<number | null>(null);
-  const [selectedRole, setSelectedRole] = useState<number | null>(null);
-  const [selectedView, setSelectedView] = useState<number | null>(null);
-  
-  const [statusMsg, setStatusMsg] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
-  const [isInitializing, setIsInitializing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-  // Inline form states
-  const [newClientName, setNewClientName] = useState('');
-  const [newServiceDeskName, setNewServiceDeskName] = useState('');
-  const [newRoleName, setNewRoleName] = useState('');
-  const [newViewName, setNewViewName] = useState('');
-  const [newCompTitle, setNewCompTitle] = useState('');
-  const [newCompType, setNewCompType] = useState('stats');
-  const [newOverrideRfc, setNewOverrideRfc] = useState('');
-  const [newOverrideIsAdmin, setNewOverrideIsAdmin] = useState(false);
-  const [newOverrideRoleId, setNewOverrideRoleId] = useState<string>('');
+  useEffect(() => {
+    fetchConfig();
+  }, []);
 
-  const showStatus = (text: string, type: 'success' | 'error' = 'success') => {
-    setStatusMsg({ text, type });
-    setTimeout(() => setStatusMsg(null), 3000);
-  };
-
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchConfig = async () => {
     try {
       const res = await fetch('/api/admin/config');
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || `Server error: ${res.status}`);
-      }
       const data = await res.json();
-      setClients(data.clients || []);
-      setServiceDesks(data.serviceDesks || []);
-      setRoles(data.roles || []);
-      setViews(data.views || []);
-      setComponents(data.components || []);
-      setOverrides(data.overrides || []);
-    } catch (err: any) {
-      console.error("Error fetching admin config:", err);
-      setRoles([]);
+      setConfig(data);
+    } catch (error) {
+      console.error('Error fetching config:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const handleAddClient = async () => {
-    if (!newClientName) return;
+  const handleInitDB = async () => {
+    if (!confirm('Are you sure you want to re-initialize the database? This will delete all current configurations.')) return;
+    
     try {
-      await fetch('/api/admin/config', {
+      setLoading(true);
+      const res = await fetch('/api/admin/init', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        setMessage({ type: 'success', text: 'Database initialized successfully!' });
+        fetchConfig();
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error: any) {
+      setMessage({ type: 'error', text: 'Init failed: ' + error.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveAll = async () => {
+    setSaving(true);
+    setMessage(null);
+    try {
+      const res = await fetch('/api/admin/save-config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'client', data: { name: newClientName } })
+        body: JSON.stringify(config)
       });
-      setNewClientName('');
-      showStatus("Client added");
-      fetchData();
-    } catch (err) {
-      showStatus("Failed to add client", "error");
+      const data = await res.json();
+      if (res.ok) {
+        setMessage({ type: 'success', text: 'All changes saved successfully!' });
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error: any) {
+      setMessage({ type: 'error', text: 'Save failed: ' + error.message });
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleAddServiceDesk = async (clientId: number) => {
-    if (!newServiceDeskName) return;
-    try {
-      await fetch('/api/admin/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'service_desk', data: { client_id: clientId, name: newServiceDeskName } })
-      });
-      setNewServiceDeskName('');
-      showStatus("Service Desk added");
-      fetchData();
-    } catch (err) {
-      showStatus("Failed to add service desk", "error");
-    }
+  const [newClientName, setNewClientName] = useState('');
+
+  const addClient = () => {
+    if (!newClientName.trim()) return;
+    const newClient = {
+      id: Date.now(), // Temporary ID
+      name: newClientName
+    };
+    setConfig({
+      ...config,
+      clients: [...config.clients, newClient]
+    });
+    setNewClientName('');
   };
 
-  const handleAddRole = async (serviceDeskId: number) => {
-    if (!newRoleName) return;
-    try {
-      await fetch('/api/admin/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'role', data: { service_desk_id: serviceDeskId, name: newRoleName } })
-      });
-      setNewRoleName('');
-      showStatus("Role added");
-      fetchData();
-    } catch (err) {
-      showStatus("Failed to add role", "error");
-    }
+  const removeClient = (id: number) => {
+    setConfig({
+      ...config,
+      clients: config.clients.filter((c: any) => c.id !== id)
+    });
   };
 
-  const handleAddView = async (roleId: number) => {
-    if (!newViewName) return;
-    try {
-      await fetch('/api/admin/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'view', data: { role_id: roleId, name: newViewName, order_index: views.filter(v => v.role_id === roleId).length } })
-      });
-      setNewViewName('');
-      showStatus("View added");
-      fetchData();
-    } catch (err) {
-      showStatus("Failed to add view", "error");
-    }
-  };
-
-  const handleAddComponent = async (viewId: number) => {
-    if (!newCompTitle) return;
-    try {
-      await fetch('/api/admin/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'component', data: { view_id: viewId, type: newCompType, title: newCompTitle, config: {}, order_index: components.filter(c => c.view_id === viewId).length } })
-      });
-      setNewCompTitle('');
-      showStatus("Component added");
-      fetchData();
-    } catch (err) {
-      showStatus("Failed to add component", "error");
-    }
-  };
-
-  const handleAddOverride = async () => {
-    if (!newOverrideRfc) return;
-    try {
-      const roleId = newOverrideRoleId ? parseInt(newOverrideRoleId) : null;
-      await fetch('/api/admin/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'override', data: { rfc: newOverrideRfc, role_id: roleId, is_admin: newOverrideIsAdmin } })
-      });
-      setNewOverrideRfc('');
-      setNewOverrideRoleId('');
-      showStatus("Override added");
-      fetchData();
-    } catch (err) {
-      showStatus("Failed to add override", "error");
-    }
-  };
-
-  const handleDelete = async (type: string, id: any) => {
-    try {
-      await fetch(`/api/admin/config?type=${type}&id=${id}`, { method: 'DELETE' });
-      showStatus(`${type} deleted`);
-      fetchData();
-    } catch (err) {
-      showStatus(`Failed to delete ${type}`, "error");
-    }
-  };
-
-  if (loading) return <div className="p-8 text-center">Loading Admin Config...</div>;
+  if (loading) return <div className="flex items-center justify-center h-64">Loading...</div>;
 
   return (
-    <div className="h-full flex flex-col bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden">
-      <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">
-        <div className="flex items-center gap-2">
-          <Shield className="text-blue-400 w-5 h-5" />
-          <h2 className="text-lg font-bold tracking-tight">Admin Control Center</h2>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Admin Configuration</h2>
+          <p className="text-gray-400 text-sm">Manage clients, service desks, and role-based dashboard views.</p>
         </div>
-        <div className="flex gap-2 items-center">
-          {statusMsg && (
-            <motion.span 
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`text-[9px] px-2 py-0.5 rounded ${statusMsg.type === 'success' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}
-            >
-              {statusMsg.text}
-            </motion.span>
-          )}
-          <button 
-            disabled={isInitializing}
-            onClick={async () => {
-              setIsInitializing(true);
-              try {
-                const res = await fetch('/api/admin/init', { method: 'POST' });
-                const data = await res.json();
-                showStatus(data.message || data.error);
-                fetchData();
-              } catch (err) {
-                showStatus("Init failed", "error");
-              } finally {
-                setIsInitializing(false);
-              }
-            }}
-            className="px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 transition-all disabled:opacity-50"
+        <div className="flex gap-3">
+          <button
+            onClick={handleInitDB}
+            className="flex items-center gap-2 px-4 py-2 bg-red-600/20 text-red-400 border border-red-600/30 rounded-lg hover:bg-red-600/30 transition-all text-sm font-medium"
           >
-            {isInitializing ? 'Initialising...' : 'Init DB'}
+            <Database size={16} />
+            Init DB
           </button>
-          <button 
-            onClick={() => setActiveTab('roles')}
-            className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${activeTab === 'roles' ? 'bg-blue-500 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+          <button
+            onClick={handleSaveAll}
+            disabled={saving}
+            className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm font-bold shadow-lg shadow-blue-600/20 disabled:opacity-50"
           >
-            Roles & Views
-          </button>
-          <button 
-            onClick={() => setActiveTab('users')}
-            className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${activeTab === 'users' ? 'bg-blue-500 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
-          >
-            User Overrides
+            {saving ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <Save size={18} />
+            )}
+            SAVE CHANGES
           </button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-        {activeTab === 'roles' ? (
-          <div className="grid grid-cols-4 gap-4 h-full">
-            {/* Clients Column */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between px-2 mb-2">
-                <h3 className="text-[10px] uppercase tracking-widest font-bold text-white/40">Clients</h3>
-              </div>
-              <div className="flex gap-1 px-2 mb-3">
-                <input 
-                  type="text" 
-                  value={newClientName}
-                  onChange={(e) => setNewClientName(e.target.value)}
-                  placeholder="New client..."
-                  className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-white focus:outline-none focus:border-blue-500/50"
-                />
-                <button onClick={handleAddClient} className="p-1 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30"><Plus size={14} /></button>
-              </div>
-              {clients.map(client => (
-                <button
-                  key={client.id}
-                  onClick={() => { setSelectedClient(client.id); setSelectedServiceDesk(null); setSelectedRole(null); setSelectedView(null); }}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all ${selectedClient === client.id ? 'bg-blue-500/20 border-blue-500/50 text-white' : 'bg-white/5 border-transparent text-white/60 hover:bg-white/10'} border`}
-                >
-                  <span>{client.name}</span>
-                  <div className="flex items-center gap-1">
-                    <Trash2 size={12} className="text-red-400/50 hover:text-red-400" onClick={(e) => { e.stopPropagation(); handleDelete('client', client.id); }} />
-                    <ChevronRight size={14} />
-                  </div>
-                </button>
-              ))}
-            </div>
+      <AnimatePresence>
+        {message && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className={`p-4 rounded-lg flex items-center gap-3 border ${
+              message.type === 'success' 
+                ? 'bg-green-500/10 border-green-500/30 text-green-400' 
+                : 'bg-red-500/10 border-red-500/30 text-red-400'
+            }`}
+          >
+            {message.type === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
+            <span className="text-sm font-medium">{message.text}</span>
+            <button onClick={() => setMessage(null)} className="ml-auto opacity-50 hover:opacity-100">×</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-            {/* Service Desks Column */}
-            <div className="space-y-2 border-l border-white/10 pl-4">
-              <div className="flex items-center justify-between px-2 mb-2">
-                <h3 className="text-[10px] uppercase tracking-widest font-bold text-white/40">Service Desks</h3>
-              </div>
-              {selectedClient && (
-                <div className="flex gap-1 px-2 mb-3">
-                  <input 
-                    type="text" 
-                    value={newServiceDeskName}
-                    onChange={(e) => setNewServiceDeskName(e.target.value)}
-                    placeholder="New service desk..."
-                    className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-white focus:outline-none focus:border-blue-500/50"
-                  />
-                  <button onClick={() => handleAddServiceDesk(selectedClient)} className="p-1 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30"><Plus size={14} /></button>
-                </div>
-              )}
-              {!selectedClient ? (
-                <div className="text-[10px] text-white/20 text-center mt-10">Select a client</div>
-              ) : (
-                serviceDesks.filter(sd => sd.client_id === selectedClient).map(sd => (
-                  <button
-                    key={sd.id}
-                    onClick={() => { setSelectedServiceDesk(sd.id); setSelectedRole(null); setSelectedView(null); }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all ${selectedServiceDesk === sd.id ? 'bg-blue-500/20 border-blue-500/50 text-white' : 'bg-white/5 border-transparent text-white/60 hover:bg-white/10'} border`}
-                  >
-                    <span>{sd.name}</span>
-                    <div className="flex items-center gap-1">
-                      <Trash2 size={12} className="text-red-400/50 hover:text-red-400" onClick={(e) => { e.stopPropagation(); handleDelete('service_desk', sd.id); }} />
-                      <ChevronRight size={14} />
-                    </div>
-                  </button>
-                ))
-              )}
-            </div>
-
-            {/* Roles Column */}
-            <div className="space-y-2 border-l border-white/10 pl-4">
-              <div className="flex items-center justify-between px-2 mb-2">
-                <h3 className="text-[10px] uppercase tracking-widest font-bold text-white/40">Roles</h3>
-              </div>
-              {selectedServiceDesk && (
-                <div className="flex gap-1 px-2 mb-3">
-                  <input 
-                    type="text" 
-                    value={newRoleName}
-                    onChange={(e) => setNewRoleName(e.target.value)}
-                    placeholder="New role..."
-                    className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-white focus:outline-none focus:border-blue-500/50"
-                  />
-                  <button onClick={() => handleAddRole(selectedServiceDesk)} className="p-1 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30"><Plus size={14} /></button>
-                </div>
-              )}
-              {!selectedServiceDesk ? (
-                <div className="text-[10px] text-white/20 text-center mt-10">Select a service desk</div>
-              ) : (
-                roles.filter(r => r.service_desk_id === selectedServiceDesk).map(role => (
-                  <button
-                    key={role.id}
-                    onClick={() => { setSelectedRole(role.id); setSelectedView(null); }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all ${selectedRole === role.id ? 'bg-blue-500/20 border-blue-500/50 text-white' : 'bg-white/5 border-transparent text-white/60 hover:bg-white/10'} border`}
-                  >
-                    <span>{role.name}</span>
-                    <div className="flex items-center gap-1">
-                      <Trash2 size={12} className="text-red-400/50 hover:text-red-400" onClick={(e) => { e.stopPropagation(); handleDelete('role', role.id); }} />
-                      <ChevronRight size={14} />
-                    </div>
-                  </button>
-                ))
-              )}
-            </div>
-
-            {/* Views & Components Column */}
-            <div className="space-y-4 border-l border-white/10 pl-4 overflow-y-auto custom-scrollbar">
-              <div className="space-y-2">
-                <h3 className="text-[10px] uppercase tracking-widest font-bold text-white/40">Views</h3>
-                {selectedRole && (
-                  <div className="flex gap-1 px-2 mb-3">
-                    <input 
-                      type="text" 
-                      value={newViewName}
-                      onChange={(e) => setNewViewName(e.target.value)}
-                      placeholder="New view..."
-                      className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-white focus:outline-none focus:border-blue-500/50"
-                    />
-                    <button onClick={() => handleAddView(selectedRole)} className="p-1 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30"><Plus size={14} /></button>
-                  </div>
-                )}
-                {!selectedRole ? (
-                  <div className="text-[10px] text-white/20 text-center mt-10">Select a role</div>
-                ) : (
-                  views.filter(v => v.role_id === selectedRole).map(view => (
-                    <button
-                      key={view.id}
-                      onClick={() => setSelectedView(view.id)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all ${selectedView === view.id ? 'bg-blue-500/20 border-blue-500/50 text-white' : 'bg-white/5 border-transparent text-white/60 hover:bg-white/10'} border`}
-                    >
-                      <span>{view.name}</span>
-                      <div className="flex items-center gap-1">
-                        <Trash2 size={12} className="text-red-400/50 hover:text-red-400" onClick={(e) => { e.stopPropagation(); handleDelete('view', view.id); }} />
-                        <ChevronRight size={14} />
-                      </div>
-                    </button>
-                  ))
-                )}
-              </div>
-
-              {selectedView && (
-                <div className="space-y-2 border-t border-white/10 pt-4">
-                  <h3 className="text-[10px] uppercase tracking-widest font-bold text-white/40">Components</h3>
-                  <div className="space-y-1 px-2 mb-3">
-                    <input 
-                      type="text" 
-                      value={newCompTitle}
-                      onChange={(e) => setNewCompTitle(e.target.value)}
-                      placeholder="Component title..."
-                      className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-white focus:outline-none focus:border-blue-500/50"
-                    />
-                    <div className="flex gap-1">
-                      <select 
-                        value={newCompType}
-                        onChange={(e) => setNewCompType(e.target.value)}
-                        className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-white/60 focus:outline-none"
-                      >
-                        <option value="stats" className="bg-[#0b1020] text-white">Stats Grid</option>
-                        <option value="cases_chart" className="bg-[#0b1020] text-white">Cases Chart</option>
-                        <option value="calls_chart" className="bg-[#0b1020] text-white">Calls Chart</option>
-                        <option value="qa_chart" className="bg-[#0b1020] text-white">QA Chart</option>
-                        <option value="gauges" className="bg-[#0b1020] text-white">Gauges Panel</option>
-                      </select>
-                      <button onClick={() => handleAddComponent(selectedView)} className="p-1 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30"><Plus size={14} /></button>
-                    </div>
-                  </div>
-                  {components.filter(c => c.view_id === selectedView).map(comp => (
-                    <div
-                      key={comp.id}
-                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs bg-white/5 border border-white/10 text-white/80"
-                    >
-                      <div className="flex flex-col">
-                        <span className="font-bold">{comp.title}</span>
-                        <span className="text-[8px] text-white/40 uppercase">{comp.type}</span>
-                      </div>
-                      <Trash2 size={12} className="text-red-400/50 hover:text-red-400 cursor-pointer" onClick={() => handleDelete('component', comp.id)} />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Clients Section */}
+        <div className="bg-[#151b2d] border border-white/5 rounded-xl overflow-hidden">
+          <div className="p-4 border-b border-white/5 bg-white/5 flex items-center justify-between">
+            <h3 className="font-bold flex items-center gap-2">
+              <Users size={18} className="text-blue-400" />
+              Clients
+            </h3>
           </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="flex flex-col gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl mb-4">
-              <h3 className="text-[10px] uppercase tracking-widest font-bold text-white/40">Add New Override</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                <input 
-                  type="text" 
-                  value={newOverrideRfc}
-                  onChange={(e) => setNewOverrideRfc(e.target.value)}
-                  placeholder="User RFC..."
-                  className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500/50"
-                />
-                <select 
-                  value={newOverrideRoleId}
-                  onChange={(e) => setNewOverrideRoleId(e.target.value)}
-                  className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white/60 focus:outline-none"
-                >
-                  <option value="">No Role Change</option>
-                  {roles.map(r => (
-                    <option key={r.id} value={r.id}>
-                      {r.client_name} - {r.service_desk_name} - {r.name}
-                    </option>
-                  ))}
-                </select>
-                <label className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    checked={newOverrideIsAdmin}
-                    onChange={(e) => setNewOverrideIsAdmin(e.target.checked)}
-                    className="w-3 h-3 rounded border-white/20 bg-transparent"
-                  />
-                  <span className="text-[10px] text-white/60">Admin Access</span>
-                </label>
-                <button 
-                  onClick={handleAddOverride}
-                  className="flex items-center justify-center gap-1 px-3 py-1.5 bg-blue-500 text-white rounded-lg text-xs font-bold hover:bg-blue-600 transition-colors"
-                >
-                  <UserPlus size={14} />
-                  Save Override
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="text-[10px] uppercase tracking-widest font-bold text-white/40 px-2">Existing Overrides</h3>
-              <div className="grid grid-cols-1 gap-2">
-              {overrides.map(override => (
-                <div key={override.rfc} className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-2xl">
-                  <div className="flex items-center gap-4">
-                    <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold text-xs">
-                      {override.rfc.substring(0, 2)}
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-xs font-bold">{override.rfc}</span>
-                      <span className="text-[9px] text-white/40">
-                        Role: {override.role_name ? `${override.client_name} - ${override.service_desk_name} - ${override.role_name}` : 'None'} | Admin: {override.is_admin ? 'Yes' : 'No'}
-                      </span>
-                    </div>
-                  </div>
-                  <button onClick={() => handleDelete('override', override.rfc)} className="p-2 hover:bg-red-500/10 text-red-400 rounded-lg transition-colors">
+          <div className="p-4 border-b border-white/5 flex gap-2">
+            <input
+              type="text"
+              value={newClientName}
+              onChange={(e) => setNewClientName(e.target.value)}
+              placeholder="New client name..."
+              className="flex-1 bg-[#0b1020] border border-white/10 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+            <button 
+              onClick={addClient}
+              className="p-1.5 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus size={16} />
+            </button>
+          </div>
+          <div className="p-2 max-h-[400px] overflow-y-auto">
+            {config.clients.map((client: any) => (
+              <div key={client.id} className="p-3 hover:bg-white/5 rounded-lg flex items-center justify-between group cursor-pointer">
+                <span className="text-sm font-medium">{client.name}</span>
+                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button 
+                    onClick={() => removeClient(client.id)}
+                    className="p-1 hover:text-red-400"
+                  >
                     <Trash2 size={14} />
                   </button>
+                  <ChevronRight size={14} className="text-gray-500" />
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
-      )}
+
+        {/* Service Desks Section */}
+        <div className="bg-[#151b2d] border border-white/5 rounded-xl overflow-hidden">
+          <div className="p-4 border-b border-white/5 bg-white/5 flex items-center justify-between">
+            <h3 className="font-bold flex items-center gap-2">
+              <Settings size={18} className="text-purple-400" />
+              Service Desks
+            </h3>
+            <button className="p-1 hover:bg-white/10 rounded transition-colors">
+              <Plus size={16} />
+            </button>
+          </div>
+          <div className="p-2">
+            {config.serviceDesks.map((sd: any) => (
+              <div key={sd.id} className="p-3 hover:bg-white/5 rounded-lg flex items-center justify-between group cursor-pointer">
+                <div>
+                  <p className="text-sm font-medium">{sd.name}</p>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Client ID: {sd.client_id}</p>
+                </div>
+                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button className="p-1 hover:text-red-400"><Trash2 size={14} /></button>
+                  <ChevronRight size={14} className="text-gray-500" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Roles Section */}
+        <div className="bg-[#151b2d] border border-white/5 rounded-xl overflow-hidden">
+          <div className="p-4 border-b border-white/5 bg-white/5 flex items-center justify-between">
+            <h3 className="font-bold flex items-center gap-2">
+              <Layout size={18} className="text-green-400" />
+              Roles & Views
+            </h3>
+            <button className="p-1 hover:bg-white/10 rounded transition-colors">
+              <Plus size={16} />
+            </button>
+          </div>
+          <div className="p-2">
+            {config.roles.map((role: any) => (
+              <div key={role.id} className="p-3 hover:bg-white/5 rounded-lg flex items-center justify-between group cursor-pointer">
+                <div>
+                  <p className="text-sm font-medium">{role.name}</p>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">{role.client_name} / {role.service_desk_name}</p>
+                </div>
+                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button className="p-1 hover:text-red-400"><Trash2 size={14} /></button>
+                  <ChevronRight size={14} className="text-gray-500" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
-);
-};
+  );
+}

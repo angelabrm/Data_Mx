@@ -1,810 +1,182 @@
-import React, { useEffect, useState } from 'react';
-import { motion } from 'motion/react';
+import React, { useState, useEffect } from 'react';
 import { 
-  LayoutDashboard, 
-  Users, 
   BarChart3, 
-  LogOut, 
-  Sun, 
-  Moon,
-  TrendingUp,
-  Inbox,
-  Clock,
-  Calendar,
-  CheckCircle,
-  ShieldCheck,
-  Shield
+  TrendingUp, 
+  Activity, 
+  Clock, 
+  CheckCircle2, 
+  AlertCircle,
+  Phone,
+  MessageSquare,
+  Star
 } from 'lucide-react';
-import { AdminPanel } from './AdminPanel';
 import { 
-  LineChart, 
-  Line, 
+  BarChart, 
+  Bar, 
   XAxis, 
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  Legend, 
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell
+  AreaChart,
+  Area,
+  LineChart,
+  Line
 } from 'recharts';
-import { useNavigate } from 'react-router-dom';
-import { User, DashboardData, Theme } from '../types';
+import { motion } from 'motion/react';
 
-interface DashboardProps {
-  user: User;
-  onLogout: () => void;
-  theme: Theme;
-  setTheme: (theme: Theme) => void;
-  initialAdmin?: boolean;
-}
+const data = [
+  { name: 'Mon', cases: 40, calls: 24, qa: 85 },
+  { name: 'Tue', cases: 30, calls: 13, qa: 88 },
+  { name: 'Wed', cases: 20, calls: 98, qa: 92 },
+  { name: 'Thu', cases: 27, calls: 39, qa: 90 },
+  { name: 'Fri', cases: 18, calls: 48, qa: 95 },
+  { name: 'Sat', cases: 23, calls: 38, qa: 89 },
+  { name: 'Sun', cases: 34, calls: 43, qa: 91 },
+];
 
-export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, setTheme, initialAdmin = false }) => {
-  const navigate = useNavigate();
-  const [data, setData] = useState<DashboardData | null>(null);
+export default function Dashboard({ user }: { user: any }) {
+  const [components, setComponents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [teamMembers, setTeamMembers] = useState<{name: string, compass: string, genesys: string, qa: string}[]>([]);
-  const [selectedAgent, setSelectedAgent] = useState<string>("all");
-  const [managerView, setManagerView] = useState<string>("CAC");
-  const [directivoView, setDirectivoView] = useState<string | null>(null);
-  const [isAdminView, setIsAdminView] = useState(initialAdmin);
-  const [dynamicViews, setDynamicViews] = useState<{id: number, name: string}[]>([]);
-  const [dynamicComponents, setDynamicComponents] = useState<any[]>([]);
-  const [activeViewId, setActiveViewId] = useState<number | null>(null);
-  
-  const isLeader = user.vistaDash.startsWith("Líder");
-  const isManager = user.vistaDash === "Manager";
-  const isDirectivo = user.vistaDash === "Directivo";
-  const effectiveRole = isManager ? `Líder ${managerView}` : user.vistaDash;
-
-  // Date filter state - Default to January of current year
-  const [startDate, setStartDate] = useState<string>(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-01-01`;
-  });
-  const [endDate, setEndDate] = useState<string>(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-01-31`;
-  });
 
   useEffect(() => {
-    const fetchUserConfig = async () => {
-      try {
-        const res = await fetch(`/api/user-config?rfc=${user.rfc}`);
-        const result = await res.json();
-        if (result.views && result.views.length > 0) {
-          setDynamicViews(result.views);
-          setDynamicComponents(result.components || []);
-          setActiveViewId(result.views[0].id);
-        }
-      } catch (err) {
-        console.error("Error fetching user config:", err);
-      }
-    };
-    fetchUserConfig();
-  }, [user.rfc]);
+    // In a real app, we'd fetch components from /api/user-config
+    // For now, we'll use the default ones seeded in Init DB
+    setComponents([
+      { type: 'stats', title: 'Operational Stats' },
+      { type: 'cases_chart', title: 'Case Management' },
+      { type: 'calls_chart', title: 'Call Volume' },
+      { type: 'qa_chart', title: 'Quality Assurance' },
+      { type: 'gauges', title: 'Performance Gauges' }
+    ]);
+    setLoading(false);
+  }, [user]);
 
-  useEffect(() => {
-    if (isLeader || isManager) {
-      fetch(`/api/team-members?role=${encodeURIComponent(effectiveRole)}`)
-        .then(res => res.json())
-        .then(data => setTeamMembers(data))
-        .catch(err => console.error("Error fetching team members:", err));
-    }
-  }, [effectiveRole, isLeader, isManager]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        let compassParam = user.compass;
-        let genesysParam = user.genesys;
-        let qaParam = user.qa;
-
-        if (effectiveRole === "Líder CAC" || effectiveRole === "Líder Premium" || effectiveRole === "Líder Fleet") {
-          if (selectedAgent === "all") {
-            compassParam = teamMembers.map(m => m.compass).filter(Boolean).join(',');
-            genesysParam = teamMembers.map(m => m.genesys).filter(Boolean).join(',');
-            qaParam = teamMembers.map(m => m.qa).filter(Boolean).join(',');
-          } else {
-            const agent = teamMembers.find(m => m.name === selectedAgent);
-            if (agent) {
-              compassParam = agent.compass;
-              genesysParam = agent.genesys;
-              qaParam = agent.qa;
-            }
-          }
-        }
-
-        if (!compassParam) compassParam = "None";
-        if (!genesysParam) genesysParam = "None";
-        if (!qaParam) qaParam = "None";
-
-        let url = `/api/dashboard-data?rfc=${user.rfc}&compass=${encodeURIComponent(compassParam)}&genesys=${encodeURIComponent(genesysParam)}&qa=${encodeURIComponent(qaParam)}`;
-        if (startDate) url += `&startDate=${startDate}`;
-        if (endDate) url += `&endDate=${endDate}`;
-        
-        const res = await fetch(url);
-        const result = await res.json();
-        setData(result);
-      } catch (err) {
-        console.error("Error fetching data:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    // Only fetch if we have team members or if we're not a leader/manager
-    const needsTeam = effectiveRole === "Líder CAC" || effectiveRole === "Líder Premium" || effectiveRole === "Líder Fleet";
-    if (!needsTeam || teamMembers.length > 0) {
-      fetchData();
-    }
-  }, [user, startDate, endDate, selectedAgent, teamMembers, effectiveRole]);
-
-  const getNavOptions = () => {
-    if (dynamicViews.length > 0) {
-      const options = dynamicViews.map(v => v.name);
-      if (user.isAdmin) options.push("Admin");
-      return options;
-    }
-    
-    const vista = user.vistaDash;
-    let options: string[] = [];
-    if (vista === "Directivo") {
-      options = ["Operativo", "Administrativo"];
-    } else if (vista === "Data") {
-      options = ["Operations", "Administrative"];
-    } else if (vista === "Manager") {
-      options = ["CAC", "Fleet", "Premium"];
-    } else if (vista === "Líder" || vista.startsWith("Líder")) {
-      options = ["My Team"];
-    } else {
-      options = ["My Indicators"];
-    }
-    
-    if (user.isAdmin) {
-      options.push("Admin");
-    }
-    return options;
-  };
-
-  const navOptions = getNavOptions();
-
-  const handleNavClick = (option: string) => {
-    if (option === "Admin") {
-      setIsAdminView(true);
-      navigate('/Admin');
-      return;
-    }
-    setIsAdminView(false);
-    navigate('/');
-    
-    // Check if it's a dynamic view
-    const dynamicView = dynamicViews.find(v => v.name === option);
-    if (dynamicView) {
-      setActiveViewId(dynamicView.id);
-      return;
-    }
-
-    if (isManager && ["CAC", "Fleet", "Premium"].includes(option)) {
-      setManagerView(option);
-      setSelectedAgent("all");
-      setTeamMembers([]); // Reset team members to trigger fresh fetch for new role
-    }
-    if (isDirectivo && ["Operativo", "Administrativo"].includes(option)) {
-      setDirectivoView(option);
-    }
-  };
-
-  const translateRole = (role: string) => {
-    switch (role) {
-      case 'Directivo': return 'Director';
-      case 'Data': return 'Data Analyst';
-      case 'Manager': return 'Manager';
-      case 'Líder': return 'Leader';
-      case 'Líder CAC': return 'CAC Leader';
-      case 'Líder Premium': return 'Premium Leader';
-      case 'Líder Fleet': return 'Fleet Leader';
-      case 'Agente': return 'Agent';
-      case 'Agente CAC': return 'CAC Agent';
-      case 'Agente Premium': return 'Premium Agent';
-      case 'Agente Fleet': return 'Fleet Agent';
-      default: return role;
-    }
-  };
-
-  if (isDirectivo && !directivoView) {
-    return (
-      <div className="min-h-screen bg-[#0b1020] flex items-center justify-center p-4">
-        <div className="flex flex-col md:flex-row gap-8">
-          <motion.button
-            whileHover={{ scale: 1.05, boxShadow: "0 20px 25px -5px rgba(59, 130, 246, 0.2)" }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setDirectivoView("Operativo")}
-            className="w-64 h-64 bg-blue-500 text-white rounded-2xl flex flex-col items-center justify-center gap-4 shadow-xl transition-all border border-blue-400/20"
-          >
-            <BarChart3 className="w-16 h-16" />
-            <span className="text-2xl font-bold">Operativo</span>
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.05, boxShadow: "0 20px 25px -5px rgba(255, 255, 255, 0.1)" }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setDirectivoView("Administrativo")}
-            className="w-64 h-64 bg-white/5 backdrop-blur-lg text-white rounded-2xl flex flex-col items-center justify-center gap-4 shadow-xl transition-all border border-white/10"
-          >
-            <Inbox className="w-16 h-16" />
-            <span className="text-2xl font-bold">Administrativo</span>
-          </motion.button>
-
-          {user.isAdmin && (
-            <motion.button
-              whileHover={{ scale: 1.05, boxShadow: "0 20px 25px -5px rgba(59, 130, 246, 0.2)" }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => { setIsAdminView(true); setDirectivoView("Admin"); navigate('/Admin'); }}
-              className="w-64 h-64 bg-blue-900/40 backdrop-blur-lg text-white rounded-2xl flex flex-col items-center justify-center gap-4 shadow-xl transition-all border border-blue-500/30"
-            >
-              <Shield className="w-16 h-16 text-blue-400" />
-              <span className="text-2xl font-bold">Admin Panel</span>
-            </motion.button>
-          )}
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <div className="flex items-center justify-center h-64">Loading Dashboard...</div>;
 
   return (
-    <div className="h-screen w-screen text-white flex items-center justify-center overflow-hidden">
-      <div className="w-full max-w-[177.78vh] aspect-video bg-white/5 backdrop-blur-xl rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row border border-white/10">
-        {/* Sidebar */}
-        <aside className="w-full md:w-56 border-r border-white/10 p-4 flex flex-col bg-white/5 backdrop-blur-md shrink-0">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 bg-blue-500/30 rounded-xl flex items-center justify-center shrink-0 border border-blue-500/20">
-              <BarChart3 className="text-blue-400 w-5 h-5" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-lg leading-none tracking-tight text-white">ORBIT</span>
-              <span className="text-[6px] leading-tight text-blue-400/60 font-bold uppercase tracking-[0.15em]">
-                Organizational Report of Business Insights and Trends
-              </span>
-            </div>
+    <div className="space-y-6">
+      <header className="mb-8">
+        <h2 className="text-3xl font-bold tracking-tight">Operational Overview</h2>
+        <p className="text-gray-400">Real-time performance metrics for {user.serviceDeskName || 'General Service'}</p>
+      </header>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard title="Total Cases" value="1,284" change="+12.5%" icon={<Activity className="text-blue-500" />} />
+        <StatCard title="Avg Handling Time" value="4m 32s" change="-5.2%" icon={<Clock className="text-purple-500" />} />
+        <StatCard title="Resolution Rate" value="94.2%" change="+2.1%" icon={<CheckCircle2 className="text-green-500" />} />
+        <StatCard title="SLA Compliance" value="98.5%" change="+0.4%" icon={<Star className="text-yellow-500" />} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ChartCard title="Case Management Trend">
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={data}>
+              <defs>
+                <linearGradient id="colorCases" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+              <XAxis dataKey="name" stroke="#ffffff50" fontSize={12} tickLine={false} axisLine={false} />
+              <YAxis stroke="#ffffff50" fontSize={12} tickLine={false} axisLine={false} />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#151b2d', border: '1px solid #ffffff10', borderRadius: '8px' }}
+                itemStyle={{ color: '#fff' }}
+              />
+              <Area type="monotone" dataKey="cases" stroke="#3b82f6" fillOpacity={1} fill="url(#colorCases)" strokeWidth={2} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard title="Call Volume Distribution">
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+              <XAxis dataKey="name" stroke="#ffffff50" fontSize={12} tickLine={false} axisLine={false} />
+              <YAxis stroke="#ffffff50" fontSize={12} tickLine={false} axisLine={false} />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#151b2d', border: '1px solid #ffffff10', borderRadius: '8px' }}
+                itemStyle={{ color: '#fff' }}
+              />
+              <Bar dataKey="calls" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <ChartCard title="Quality Assurance Score" className="lg:col-span-2">
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+              <XAxis dataKey="name" stroke="#ffffff50" fontSize={12} tickLine={false} axisLine={false} />
+              <YAxis stroke="#ffffff50" fontSize={12} tickLine={false} axisLine={false} domain={[80, 100]} />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#151b2d', border: '1px solid #ffffff10', borderRadius: '8px' }}
+                itemStyle={{ color: '#fff' }}
+              />
+              <Line type="monotone" dataKey="qa" stroke="#10b981" strokeWidth={3} dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <div className="bg-[#151b2d] border border-white/5 rounded-2xl p-6">
+          <h3 className="text-lg font-bold mb-6">Recent Alerts</h3>
+          <div className="space-y-4">
+            <AlertItem type="warning" text="SLA threshold reached for Premium Desk" time="12m ago" />
+            <AlertItem type="error" text="Genesys connection timeout" time="45m ago" />
+            <AlertItem type="success" text="Daily report generated" time="2h ago" />
+            <AlertItem type="warning" text="High call volume detected" time="3h ago" />
           </div>
-
-          <nav className="flex-1 space-y-1.5 overflow-y-auto pr-1 no-scrollbar">
-            {navOptions.map((option) => {
-              const dynamicView = dynamicViews.find(v => v.name === option);
-              const isActive = (option === "Admin" && isAdminView) || 
-                              (!isAdminView && (
-                                (dynamicView && activeViewId === dynamicView.id) ||
-                                (!dynamicView && (
-                                  (isManager && managerView === option) || 
-                                  (isDirectivo && directivoView === option) ||
-                                  (isLeader && option === "My Team") ||
-                                  (!isLeader && !isManager && !isDirectivo && option === "My Indicators")
-                                ))
-                              ));
-              return (
-                <motion.button
-                  key={option}
-                  onClick={() => handleNavClick(option)}
-                  whileHover={{ x: 4, backgroundColor: isActive ? "" : "rgba(59, 130, 246, 0.15)" }}
-                  whileTap={{ scale: 0.97 }}
-                  className={`relative w-full flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-medium transition-all text-left outline-none ${
-                    isActive ? "text-white bg-blue-500/40 shadow-[0_0_15px_rgba(59,130,246,0.5)]" : "text-white/60 bg-blue-500/10 hover:bg-blue-500/20"
-                  }`}
-                >
-                  {option === "Admin" ? <Shield className={`relative z-10 w-3 h-3 ${isActive ? "text-white" : ""}`} /> : <LayoutDashboard className={`relative z-10 w-3 h-3 ${isActive ? "text-white" : ""}`} />}
-                  <span className="relative z-10">{option}</span>
-                </motion.button>
-              );
-            })}
-
-            <div className="pt-3 pb-1">
-              <h3 className="text-[8px] uppercase tracking-wider text-muted font-bold px-2 mb-1.5">Date Filter</h3>
-              <div className="px-2 space-y-1.5">
-                <div className="space-y-0.5">
-                  <label className="text-[8px] text-muted font-medium">Start Date</label>
-                  <div className="relative">
-                    <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 w-2.5 h-2.5 text-muted" />
-                    <input 
-                      type="date" 
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-md pl-6 pr-1 py-0.5 text-[9px] focus:ring-1 focus:ring-blue-500 outline-none text-white"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-0.5">
-                  <label className="text-[8px] text-white/60 font-medium">End Date</label>
-                  <div className="relative">
-                    <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 w-2.5 h-2.5 text-white/40" />
-                    <input 
-                      type="date" 
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-md pl-6 pr-1 py-0.5 text-[9px] focus:ring-1 focus:ring-blue-500 outline-none text-white"
-                    />
-                  </div>
-                </div>
-                {(startDate || endDate) && (
-                  <button 
-                    onClick={() => { setStartDate(''); setEndDate(''); }}
-                    className="text-[8px] text-blue-400 hover:underline"
-                  >
-                    Clear filters
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {(isLeader || isManager) && (
-              <div className="pt-3 pb-1">
-                <h3 className="text-[8px] uppercase tracking-wider text-muted font-bold px-2 mb-1.5">Agent Slicer</h3>
-                <div className="px-2">
-                  <select
-                    value={selectedAgent}
-                    onChange={(e) => setSelectedAgent(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-md px-2 py-0.5 text-[9px] focus:ring-1 focus:ring-blue-500 outline-none text-white appearance-none cursor-pointer"
-                  >
-                    <option value="all" className="bg-[#0b1020] text-white">All Agents (Sum)</option>
-                    {teamMembers.map((member) => (
-                      <option key={member.name} value={member.name} className="bg-[#0b1020] text-white">
-                        {member.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            )}
-          </nav>
-
-          <div className="mt-auto pt-3 space-y-1.5 border-t border-white/10">
-            <button
-              onClick={onLogout}
-              className="w-full flex items-center gap-2 px-2 py-1 rounded-lg text-[10px] font-medium text-red-500 hover:bg-red-500/10 transition-colors"
-            >
-              <LogOut className="w-3 h-3" />
-              Sign Out
-            </button>
-          </div>
-        </aside>
-
-        {/* Main Content */}
-        <main className="flex-1 p-4 md:p-5 space-y-3 overflow-hidden bg-white/5 backdrop-blur-sm no-scrollbar relative">
-          {isAdminView ? (
-            <AdminPanel />
-          ) : (
-            <>
-              <header className="flex flex-col md:flex-row md:items-center justify-between gap-1 relative z-10">
-                <div>
-                  <h2 className="text-xl font-bold tracking-tight">Welcome back, {user.name}</h2>
-                  <p className="text-[8px] font-mono text-blue-400/60 uppercase tracking-widest">
-                    AUTH_ID: {user.rfc.substring(0, 8)}... // SESSION_ACTIVE // 
-                    ROLE: {translateRole(user.vistaDash).toUpperCase()}
-                    {user.clientName && ` // CLIENT: ${user.clientName.toUpperCase()}`}
-                    {user.serviceDeskName && ` // DESK: ${user.serviceDeskName.toUpperCase()}`}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-[8px] font-mono text-blue-400">
-                    <div className="w-1 h-1 rounded-full bg-blue-400 animate-pulse" />
-                    NODE_COMPASS: {user.compass}
-                  </div>
-                </div>
-              </header>
-
-              {/* Main Dashboard Grid */}
-              <div className="flex flex-col lg:flex-row gap-4 relative z-10 h-[calc(100%-4rem)]">
-                {/* Left Column: Stats and Charts */}
-                <div className="flex-1 flex flex-col gap-4 min-h-0">
-                  {/* Stats Grid */}
-                  {(!activeViewId || dynamicComponents.some(c => c.view_id === activeViewId && c.type === 'stats')) && (
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 shrink-0">
-                      <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="glass-card p-3 flex items-center gap-3"
-                      >
-                        <div className="w-10 h-10 rounded-full border-[3px] border-blue-400 flex items-center justify-center text-xs font-bold shadow-[0_0_10px_rgba(59,130,246,0.5)] shrink-0">
-                          {loading ? "..." : data?.abiertos ?? 0}
-                        </div>
-                        <div>
-                          <p className="text-[8px] uppercase tracking-wider text-white/60 font-bold">Opened Cases</p>
-                        </div>
-                      </motion.div>
-
-                      <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.15 }}
-                        className="glass-card p-3 flex items-center gap-3"
-                      >
-                        <div className="w-10 h-10 rounded-full border-[3px] border-emerald-400 flex items-center justify-center text-xs font-bold shadow-[0_0_10px_rgba(52,211,153,0.5)] shrink-0">
-                          {loading ? "..." : data?.cerrados ?? 0}
-                        </div>
-                        <div>
-                          <p className="text-[8px] uppercase tracking-wider text-white/60 font-bold">Closed Cases</p>
-                        </div>
-                      </motion.div>
-
-                      <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.19 }}
-                        className="glass-card p-3 flex items-center gap-3"
-                      >
-                        <div className="w-10 h-10 rounded-full border-[3px] border-amber-400 flex items-center justify-center text-xs font-bold shadow-[0_0_10px_rgba(251,191,36,0.5)] shrink-0">
-                          {loading ? "..." : typeof data?.backlog === 'number' ? `${(data.backlog * 100).toFixed(0)}%` : "0%"}
-                        </div>
-                        <div>
-                          <p className="text-[8px] uppercase tracking-wider text-white/60 font-bold">Backlog</p>
-                        </div>
-                      </motion.div>
-
-                      <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="glass-card p-3 flex items-center gap-3"
-                      >
-                        <div className="w-10 h-10 rounded-full border-[3px] border-purple-400 flex items-center justify-center text-xs font-bold shadow-[0_0_10px_rgba(168,85,247,0.5)] shrink-0">
-                          {loading ? "..." : typeof data?.qa === 'number' ? `${data.qa.toFixed(0)}%` : "0%"}
-                        </div>
-                        <div>
-                          <p className="text-[8px] uppercase tracking-wider text-white/60 font-bold">QA Score</p>
-                        </div>
-                      </motion.div>
-                    </div>
-                  )}
-
-                  {/* Charts Section */}
-                  <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-3 min-h-0">
-                    {/* Cases Chart */}
-                    {(!activeViewId || dynamicComponents.some(c => c.view_id === activeViewId && c.type === 'cases_chart')) && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 }}
-                        className="glass-card p-3 flex flex-col"
-                      >
-                        <h3 className="text-[10px] font-bold mb-2 text-white uppercase tracking-widest flex justify-between items-center shrink-0">
-                          <span>Cases Over Time</span>
-                          <span className="text-[7px] text-white/20 font-mono">DATA_STREAM_01</span>
-                        </h3>
-                        <div className="flex-1 w-full min-h-0">
-                          {loading ? (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
-                            </div>
-                          ) : data?.chartData && data.chartData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
-                              <LineChart
-                                data={data.chartData}
-                                margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
-                              >
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.05)" />
-                                <XAxis 
-                                  dataKey="date" 
-                                  stroke="rgba(255, 255, 255, 0.4)"
-                                  fontSize={8}
-                                  tickFormatter={(str) => {
-                                    try {
-                                      const date = new Date(str);
-                                      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-                                    } catch (e) {
-                                      return str;
-                                    }
-                                  }}
-                                />
-                                <YAxis 
-                                  stroke="rgba(255, 255, 255, 0.4)"
-                                  fontSize={8}
-                                />
-                                <Tooltip 
-                                  contentStyle={{ 
-                                    backgroundColor: '#1a1a1a',
-                                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                                    borderRadius: '8px',
-                                    fontSize: '8px',
-                                    color: '#ffffff'
-                                  }}
-                                />
-                                <Line 
-                                  type="monotone" 
-                                  dataKey="open" 
-                                  name="Open" 
-                                  stroke="#60a5fa" 
-                                  strokeWidth={1.5}
-                                  dot={{ r: 2, fill: '#60a5fa', strokeWidth: 0 }}
-                                  activeDot={{ r: 4, strokeWidth: 0 }}
-                                />
-                                <Line 
-                                  type="monotone" 
-                                  dataKey="closed" 
-                                  name="Closed" 
-                                  stroke="#34d399" 
-                                  strokeWidth={1.5}
-                                  dot={{ r: 2, fill: '#34d399', strokeWidth: 0 }}
-                                  activeDot={{ r: 4, strokeWidth: 0 }}
-                                />
-                              </LineChart>
-                            </ResponsiveContainer>
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-[8px] text-white/40">
-                              No chart data available
-                            </div>
-                          )}
-                        </div>
-                      </motion.div>
-                    )}
-
-                    {/* Calls Chart */}
-                    {(!activeViewId || dynamicComponents.some(c => c.view_id === activeViewId && c.type === 'calls_chart')) && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.5 }}
-                        className="glass-card p-3 flex flex-col"
-                      >
-                        <h3 className="text-[10px] font-bold mb-2 text-white uppercase tracking-widest flex justify-between items-center shrink-0">
-                          <span>Calls Over Time</span>
-                          <span className="text-[7px] text-white/20 font-mono">DATA_STREAM_02</span>
-                        </h3>
-                        <div className="flex-1 w-full min-h-0">
-                          {loading ? (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
-                            </div>
-                          ) : data?.chartData && data.chartData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
-                              <LineChart
-                                data={data.chartData}
-                                margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
-                              >
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.05)" />
-                                <XAxis 
-                                  dataKey="date" 
-                                  stroke="rgba(255, 255, 255, 0.4)"
-                                  fontSize={8}
-                                  tickFormatter={(str) => {
-                                    try {
-                                      const date = new Date(str);
-                                      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-                                    } catch (e) {
-                                      return str;
-                                    }
-                                  }}
-                                />
-                                <YAxis 
-                                  stroke="rgba(255, 255, 255, 0.4)"
-                                  fontSize={8}
-                                />
-                                <Tooltip 
-                                  contentStyle={{ 
-                                    backgroundColor: '#1a1a1a',
-                                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                                    borderRadius: '8px',
-                                    fontSize: '8px',
-                                    color: '#ffffff'
-                                  }}
-                                />
-                                <Line 
-                                  type="monotone" 
-                                  dataKey="incoming" 
-                                  name="Incoming" 
-                                  stroke="#f59e0b" 
-                                  strokeWidth={1.5}
-                                  dot={{ r: 2, fill: '#f59e0b', strokeWidth: 0 }}
-                                  activeDot={{ r: 4, strokeWidth: 0 }}
-                                />
-                                <Line 
-                                  type="monotone" 
-                                  dataKey="outgoing" 
-                                  name="Outgoing" 
-                                  stroke="#8b5cf6" 
-                                  strokeWidth={1.5}
-                                  dot={{ r: 2, fill: '#8b5cf6', strokeWidth: 0 }}
-                                  activeDot={{ r: 4, strokeWidth: 0 }}
-                                />
-                              </LineChart>
-                            </ResponsiveContainer>
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-[8px] text-white/40">
-                              No chart data available
-                            </div>
-                          )}
-                        </div>
-                      </motion.div>
-                    )}
-
-                    {/* QA Chart */}
-                    {(!activeViewId || dynamicComponents.some(c => c.view_id === activeViewId && c.type === 'qa_chart')) && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.6 }}
-                        className="lg:col-span-2 glass-card p-3 flex flex-col"
-                      >
-                        <h3 className="text-[10px] font-bold mb-2 text-white uppercase tracking-widest flex justify-between items-center shrink-0">
-                          <span>QA Score Over Time</span>
-                          <span className="text-[7px] text-white/20 font-mono">DATA_STREAM_03</span>
-                        </h3>
-                        <div className="flex-1 w-full min-h-0">
-                          {loading ? (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
-                            </div>
-                          ) : data?.chartData && data.chartData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
-                              <LineChart
-                                data={data.chartData.filter(d => d.qa !== undefined)}
-                                margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
-                              >
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.05)" />
-                                <XAxis 
-                                  dataKey="date" 
-                                  stroke="rgba(255, 255, 255, 0.4)"
-                                  fontSize={8}
-                                  tickFormatter={(str) => {
-                                    try {
-                                      const date = new Date(str);
-                                      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-                                    } catch (e) {
-                                      return str;
-                                    }
-                                  }}
-                                />
-                                <YAxis 
-                                  stroke="rgba(255, 255, 255, 0.4)"
-                                  fontSize={8}
-                                  domain={[0, 100]}
-                                />
-                                <Tooltip 
-                                  contentStyle={{ 
-                                    backgroundColor: '#1a1a1a',
-                                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                                    borderRadius: '8px',
-                                    fontSize: '8px',
-                                    color: '#ffffff'
-                                  }}
-                                />
-                                <Line 
-                                  type="monotone" 
-                                  dataKey="qa" 
-                                  name="QA Score" 
-                                  stroke="#ec4899" 
-                                  strokeWidth={1.5}
-                                  dot={{ r: 2, fill: '#ec4899', strokeWidth: 0 }}
-                                  activeDot={{ r: 4, strokeWidth: 0 }}
-                                />
-                              </LineChart>
-                            </ResponsiveContainer>
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-[8px] text-white/40">
-                              No chart data available
-                            </div>
-                          )}
-                        </div>
-                      </motion.div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Right Column: Gauges (Airplane Dashboard Style) */}
-                {(!activeViewId || dynamicComponents.some(c => c.view_id === activeViewId && c.type === 'gauges')) && (
-                  <div className="w-full lg:w-40 space-y-3 shrink-0">
-                    {(() => {
-                      const closedRate = data?.abiertos && data.abiertos > 0 
-                        ? (data.cerrados / data.abiertos) * 100 
-                        : 0;
-                      
-                      const qaScore = data?.qa ?? 0;
-                      const performance = (closedRate * 0.4) + (qaScore * 0.6);
-                      const partsPercentage = data?.partsPercentage ?? 0;
-
-                      return (
-                        <>
-                          <GaugeChart 
-                            value={closedRate} 
-                            label="Closed Rate" 
-                            color="#3b82f6" 
-                            delay={0.25}
-                          />
-                          <GaugeChart 
-                            value={partsPercentage} 
-                            label="% Cases Parts" 
-                            color="#f59e0b" 
-                            delay={0.28}
-                          />
-                          <GaugeChart 
-                            value={performance} 
-                            label="Performance" 
-                            color="#10b981" 
-                            delay={0.3}
-                          />
-                          <div className="glass-card p-3 flex flex-col items-center justify-center border-dashed border-white/10">
-                            <div className="text-[7px] uppercase tracking-widest text-white/30 font-bold mb-1.5">System Status</div>
-                            <div className="flex gap-1">
-                              <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-                              <div className="w-1 h-1 rounded-full bg-emerald-500/30" />
-                              <div className="w-1 h-1 rounded-full bg-emerald-500/30" />
-                            </div>
-                            <div className="mt-1.5 text-[6px] font-mono text-white/20 uppercase">All systems nominal</div>
-                          </div>
-                        </>
-                      );
-                    })()}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </main>
+        </div>
       </div>
     </div>
   );
-};
+}
 
-const GaugeChart = ({ value, label, color, delay }: { value: number, label: string, color: string, delay: number }) => {
-  const data = [
-    { value: value > 100 ? 100 : value },
-    { value: 100 - (value > 100 ? 100 : value) }
-  ];
-
+function StatCard({ title, value, change, icon }: any) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay }}
-      className="glass-card p-4 flex flex-col items-center justify-center relative overflow-hidden group border-dashed border-white/10"
+    <motion.div 
+      whileHover={{ y: -4 }}
+      className="bg-[#151b2d] border border-white/5 rounded-2xl p-6 shadow-lg"
     >
-      <div className="absolute top-2 right-2 flex gap-0.5">
-        <div className="w-0.5 h-0.5 rounded-full bg-white/20" />
-        <div className="w-0.5 h-0.5 rounded-full bg-white/20" />
+      <div className="flex items-center justify-between mb-4">
+        <div className="p-2 bg-white/5 rounded-lg">{icon}</div>
+        <span className={`text-xs font-bold ${change.startsWith('+') ? 'text-green-400' : 'text-red-400'}`}>
+          {change}
+        </span>
       </div>
-      
-      <h3 className="text-[8px] uppercase tracking-[0.2em] text-white font-black mb-2">{label}</h3>
-      
-      <div className="relative w-32 h-20">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="100%"
-              startAngle={180}
-              endAngle={0}
-              innerRadius={35}
-              outerRadius={45}
-              paddingAngle={0}
-              dataKey="value"
-              stroke="none"
-            >
-              <Cell fill={color} style={{ filter: `drop-shadow(0 0 5px ${color}60)` }} />
-              <Cell fill="rgba(255, 255, 255, 0.03)" />
-            </Pie>
-          </PieChart>
-        </ResponsiveContainer>
-        
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center">
-          <span className="text-xl font-black tracking-tighter text-white/90">
-            {value.toFixed(0)}
-            <span className="text-[8px] ml-0.5 opacity-50">%</span>
-          </span>
-        </div>
-      </div>
-
-      <div className="mt-2 w-full flex justify-between items-center px-2">
-        <div className="text-[6px] font-mono text-white/20">00</div>
-        <div className="flex gap-0.5">
-          {[1,2,3,4,5].map(i => (
-            <div key={i} className={`w-1 h-0.5 rounded-full ${i <= (value/20) ? 'bg-white/40' : 'bg-white/5'}`} />
-          ))}
-        </div>
-        <div className="text-[6px] font-mono text-white/20">100</div>
-      </div>
+      <h3 className="text-gray-400 text-sm font-medium">{title}</h3>
+      <p className="text-2xl font-bold mt-1">{value}</p>
     </motion.div>
   );
-};
+}
+
+function ChartCard({ title, children, className = "" }: any) {
+  return (
+    <div className={`bg-[#151b2d] border border-white/5 rounded-2xl p-6 ${className}`}>
+      <h3 className="text-lg font-bold mb-6">{title}</h3>
+      {children}
+    </div>
+  );
+}
+
+function AlertItem({ type, text, time }: any) {
+  const colors = {
+    warning: 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20',
+    error: 'text-red-500 bg-red-500/10 border-red-500/20',
+    success: 'text-green-500 bg-green-500/10 border-green-500/20'
+  };
+
+  return (
+    <div className={`p-3 rounded-xl border flex items-start gap-3 ${colors[type as keyof typeof colors]}`}>
+      <AlertCircle size={16} className="mt-0.5 shrink-0" />
+      <div>
+        <p className="text-sm font-medium leading-tight">{text}</p>
+        <p className="text-[10px] opacity-60 mt-1">{time}</p>
+      </div>
+    </div>
+  );
+}
