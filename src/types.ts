@@ -2,9 +2,12 @@ export interface User {
   rfc: string;
   name: string;
   vistaDash: string;
+  clientName?: string;
+  serviceDeskName?: string;
   compass: string;
   genesys: string;
   qa: string;
+  isAdmin?: boolean;
 }
 
 export interface DashboardData {

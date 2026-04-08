@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Login } from './components/Login';
 import { Dashboard } from './components/Dashboard';
 import { User, Theme } from './types';
@@ -50,21 +51,34 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
-      {!user ? (
-        <Login 
-          onLogin={handleLogin} 
-          isLoading={isLoading} 
-          error={error} 
-        />
-      ) : (
-        <Dashboard 
-          user={user} 
-          onLogout={handleLogout} 
-          theme={theme}
-          setTheme={setTheme}
-        />
-      )}
-    </div>
+    <Router>
+      <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+        <Routes>
+          <Route 
+            path="/" 
+            element={
+              !user ? (
+                <Login onLogin={handleLogin} isLoading={isLoading} error={error} />
+              ) : (
+                <Dashboard user={user} onLogout={handleLogout} theme={theme} setTheme={setTheme} />
+              )
+            } 
+          />
+          <Route 
+            path="/Admin" 
+            element={
+              !user ? (
+                <Navigate to="/" />
+              ) : user.isAdmin ? (
+                <Dashboard user={user} onLogout={handleLogout} theme={theme} setTheme={setTheme} initialAdmin={true} />
+              ) : (
+                <Navigate to="/" />
+              )
+            } 
+          />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }

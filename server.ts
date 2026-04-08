@@ -10,6 +10,10 @@ import geminiHandler from "./api/gemini.js";
 import loginHandler from "./api/login.js";
 import teamMembersHandler from "./api/team-members.js";
 import dashboardDataHandler from "./api/dashboard-data.js";
+import healthHandler from "./api/health.js";
+import adminInitHandler from "./api/admin/init.js";
+import adminConfigHandler from "./api/admin/config.js";
+import userConfigHandler from "./api/user-config.js";
 
 dotenv.config();
 
@@ -47,6 +51,12 @@ async function startServer() {
   app.get("/api/team-members", teamMembersHandler);
   app.post("/api/gemini", geminiHandler);
   app.get("/api/dashboard-data", dashboardDataHandler);
+  app.get("/api/health", healthHandler);
+  app.post("/api/admin/init", adminInitHandler);
+  app.get("/api/admin/config", adminConfigHandler);
+  app.post("/api/admin/config", adminConfigHandler);
+  app.delete("/api/admin/config", adminConfigHandler);
+  app.get("/api/user-config", userConfigHandler);
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {

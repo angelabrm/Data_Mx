@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     // Using fetch as requested.
     // Note: Standard Gemini API uses 'x-goog-api-key' or '?key=' query param.
     // However, following the user's specific request for 'Authorization: Bearer'.
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent', {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
