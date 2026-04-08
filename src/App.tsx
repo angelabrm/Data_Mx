@@ -1,82 +1,84 @@
-import React, { useState, useEffect } from 'react';
-import Login from './components/Login';
-import Dashboard from './components/Dashboard';
-import AdminPanel from './components/AdminPanel';
+import { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Login } from './components/Login';
+import { Dashboard } from './components/Dashboard';
+import { User, Theme } from './types';
 
 export default function App() {
-  const [user, setUser] = useState<any>(null);
-  const [view, setView] = useState<'login' | 'dashboard' | 'admin'>('login');
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('theme') as Theme) || 'dark';
+    }
+    return 'dark';
+  });
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      const parsedUser = JSON.parse(savedUser);
-      setUser(parsedUser);
-      setView(parsedUser.isAdmin ? 'admin' : 'dashboard');
-    }
-  }, []);
+    const root = window.document.documentElement;
+    root.classList.remove('light', 'dark');
+    root.classList.add(theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
 
-  const handleLogin = (userData: any) => {
-    setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
-    setView(userData.isAdmin ? 'admin' : 'dashboard');
+  const handleLogin = async (rfc: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rfc }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Login failed');
+      }
+
+      const userData = await response.json();
+      setUser(userData);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleLogout = () => {
     setUser(null);
-    localStorage.removeItem('user');
-    setView('login');
   };
 
-  if (view === 'login') return <Login onLogin={handleLogin} />;
-
   return (
-    <div className="min-h-screen bg-[#0b1020] text-white">
-      <nav className="border-b border-white/10 bg-[#0b1020]/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold tracking-tight text-white">
-              DASHBOARD <span className="text-blue-500">PRO</span>
-            </h1>
-            {user?.isAdmin && (
-              <div className="flex gap-2 ml-8">
-                <button
-                  onClick={() => setView('dashboard')}
-                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                    view === 'dashboard' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  Dashboard
-                </button>
-                <button
-                  onClick={() => setView('admin')}
-                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                    view === 'admin' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  Admin
-                </button>
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm font-medium">{user?.name}</p>
-              <p className="text-xs text-gray-400">{user?.vistaDash}</p>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="text-sm text-gray-400 hover:text-white transition-colors"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      <main className="max-w-7xl mx-auto p-6">
-        {view === 'dashboard' ? <Dashboard user={user} /> : <AdminPanel />}
-      </main>
-    </div>
+    <Router>
+      <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+        <Routes>
+          <Route 
+            path="/" 
+            element={
+              !user ? (
+                <Login onLogin={handleLogin} isLoading={isLoading} error={error} />
+              ) : (
+                <Dashboard user={user} onLogout={handleLogout} theme={theme} setTheme={setTheme} />
+              )
+            } 
+          />
+          <Route 
+            path="/Admin" 
+            element={
+              !user ? (
+                <Navigate to="/" />
+              ) : user.isAdmin ? (
+                <Dashboard user={user} onLogout={handleLogout} theme={theme} setTheme={setTheme} initialAdmin={true} />
+              ) : (
+                <Navigate to="/" />
+              )
+            } 
+          />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }

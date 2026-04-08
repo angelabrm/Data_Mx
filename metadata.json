@@ -1,5 +1,5 @@
 {
-  "name": "Dashboard Admin Panel",
-  "description": "A comprehensive dashboard with a hierarchical admin panel for managing clients, service desks, and roles.",
+  "name": "ORBIT Dashboard",
+  "description": "A secure data visualization dashboard integrating Google Sheets and Neon PostgreSQL with role-based access.",
   "requestFramePermissions": []
 }
