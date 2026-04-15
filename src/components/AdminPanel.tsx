@@ -261,7 +261,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onConfigChange }) => {
     <div className="h-full flex flex-col bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden">
       <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">
         <div className="flex items-center gap-2">
-          <Shield className="text-blue-400 w-5 h-5" />
+          <Shield className="text-white w-5 h-5" />
           <h2 className="text-lg font-bold tracking-tight">Admin Control Center</h2>
         </div>
         <div className="flex gap-2 items-center">
@@ -299,7 +299,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onConfigChange }) => {
             disabled={isSaving}
             className={`px-3 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 transition-all ${
               hasChanges 
-                ? 'bg-blue-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]' 
+                ? 'bg-white text-[#0b1020] shadow-[0_0_15px_rgba(255,255,255,0.3)]' 
                 : 'bg-white/5 text-white/40 border border-white/10'
             }`}
           >
@@ -308,13 +308,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onConfigChange }) => {
           </button>
           <button 
             onClick={() => setActiveTab('roles')}
-            className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${activeTab === 'roles' ? 'bg-blue-500 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+            className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${activeTab === 'roles' ? 'bg-white text-[#0b1020]' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
           >
             Roles & Views
           </button>
           <button 
             onClick={() => setActiveTab('users')}
-            className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${activeTab === 'users' ? 'bg-blue-500 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+            className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${activeTab === 'users' ? 'bg-white text-[#0b1020]' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
           >
             User Overrides
           </button>
@@ -337,13 +337,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onConfigChange }) => {
                   placeholder="New client..."
                   className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-white focus:outline-none focus:border-blue-500/50"
                 />
-                <button onClick={handleAddClient} className="p-1 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30"><Plus size={14} /></button>
+                <button onClick={handleAddClient} className="p-1 bg-white/10 text-white rounded-lg hover:bg-white/20"><Plus size={14} /></button>
               </div>
               {clients.map(client => (
                 <button
                   key={client.id}
                   onClick={() => { setSelectedClient(client.id); setSelectedServiceDesk(null); setSelectedRole(null); setSelectedView(null); }}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all ${selectedClient === client.id ? 'bg-blue-500/20 border-blue-500/50 text-white' : 'bg-white/5 border-transparent text-white/60 hover:bg-white/10'} border`}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all ${selectedClient === client.id ? 'bg-white/20 border-white/40 text-white' : 'bg-white/5 border-transparent text-white/60 hover:bg-white/10'} border`}
                 >
                   <span>{client.name}</span>
                   <div className="flex items-center gap-1">
@@ -368,7 +368,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onConfigChange }) => {
                     placeholder="New service desk..."
                     className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-white focus:outline-none focus:border-blue-500/50"
                   />
-                  <button onClick={() => handleAddServiceDesk(selectedClient)} className="p-1 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30"><Plus size={14} /></button>
+                  <button onClick={() => handleAddServiceDesk(selectedClient)} className="p-1 bg-white/10 text-white rounded-lg hover:bg-white/20"><Plus size={14} /></button>
                 </div>
               )}
               {!selectedClient ? (
@@ -378,7 +378,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onConfigChange }) => {
                   <button
                     key={sd.id}
                     onClick={() => { setSelectedServiceDesk(sd.id); setSelectedRole(null); setSelectedView(null); }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all ${selectedServiceDesk === sd.id ? 'bg-blue-500/20 border-blue-500/50 text-white' : 'bg-white/5 border-transparent text-white/60 hover:bg-white/10'} border`}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all ${selectedServiceDesk === sd.id ? 'bg-white/20 border-white/40 text-white' : 'bg-white/5 border-transparent text-white/60 hover:bg-white/10'} border`}
                   >
                     <span>{sd.name}</span>
                     <div className="flex items-center gap-1">
@@ -404,7 +404,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onConfigChange }) => {
                     placeholder="New role..."
                     className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-white focus:outline-none focus:border-blue-500/50"
                   />
-                  <button onClick={() => handleAddRole(selectedServiceDesk)} className="p-1 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30"><Plus size={14} /></button>
+                  <button onClick={() => handleAddRole(selectedServiceDesk)} className="p-1 bg-white/10 text-white rounded-lg hover:bg-white/20"><Plus size={14} /></button>
                 </div>
               )}
               {!selectedServiceDesk ? (
@@ -414,7 +414,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onConfigChange }) => {
                   <button
                     key={role.id}
                     onClick={() => { setSelectedRole(role.id); setSelectedView(null); }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all ${selectedRole === role.id ? 'bg-blue-500/20 border-blue-500/50 text-white' : 'bg-white/5 border-transparent text-white/60 hover:bg-white/10'} border`}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all ${selectedRole === role.id ? 'bg-white/20 border-white/40 text-white' : 'bg-white/5 border-transparent text-white/60 hover:bg-white/10'} border`}
                   >
                     <span>{role.name}</span>
                     <div className="flex items-center gap-1">
@@ -439,7 +439,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onConfigChange }) => {
                       placeholder="New view..."
                       className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-white focus:outline-none focus:border-blue-500/50"
                     />
-                    <button onClick={() => handleAddView(selectedRole)} className="p-1 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30"><Plus size={14} /></button>
+                    <button onClick={() => handleAddView(selectedRole)} className="p-1 bg-white/10 text-white rounded-lg hover:bg-white/20"><Plus size={14} /></button>
                   </div>
                 )}
                 {!selectedRole ? (
@@ -449,7 +449,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onConfigChange }) => {
                     <button
                       key={view.id}
                       onClick={() => setSelectedView(view.id)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all ${selectedView === view.id ? 'bg-blue-500/20 border-blue-500/50 text-white' : 'bg-white/5 border-transparent text-white/60 hover:bg-white/10'} border`}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all ${selectedView === view.id ? 'bg-white/20 border-white/40 text-white' : 'bg-white/5 border-transparent text-white/60 hover:bg-white/10'} border`}
                     >
                       <span>{view.name}</span>
                       <div className="flex items-center gap-1">
@@ -484,7 +484,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onConfigChange }) => {
                         <option value="qa_chart" className="bg-[#0b1020] text-white">QA Chart</option>
                         <option value="gauges" className="bg-[#0b1020] text-white">Gauges Panel</option>
                       </select>
-                      <button onClick={() => handleAddComponent(selectedView)} className="p-1 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30"><Plus size={14} /></button>
+                      <button onClick={() => handleAddComponent(selectedView)} className="p-1 bg-white/10 text-white rounded-lg hover:bg-white/20"><Plus size={14} /></button>
                     </div>
                   </div>
                   {components.filter(c => c.view_id === selectedView).map(comp => (
@@ -538,7 +538,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onConfigChange }) => {
                 </label>
                 <button 
                   onClick={handleAddOverride}
-                  className="flex items-center justify-center gap-1 px-3 py-1.5 bg-blue-500 text-white rounded-lg text-xs font-bold hover:bg-blue-600 transition-colors"
+                  className="flex items-center justify-center gap-1 px-3 py-1.5 bg-white text-[#0b1020] rounded-lg text-xs font-bold hover:bg-white/90 transition-colors"
                 >
                   <UserPlus size={14} />
                   Save Override
@@ -552,7 +552,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onConfigChange }) => {
               {overrides.map(override => (
                 <div key={override.rfc} className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-2xl">
                   <div className="flex items-center gap-4">
-                    <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold text-xs">
+                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white font-bold text-xs">
                       {override.rfc.substring(0, 2)}
                     </div>
                     <div className="flex flex-col">

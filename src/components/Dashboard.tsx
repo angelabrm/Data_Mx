@@ -246,12 +246,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
 
           {user.isAdmin && (
             <motion.button
-              whileHover={{ scale: 1.05, boxShadow: "0 20px 25px -5px rgba(59, 130, 246, 0.2)" }}
+              whileHover={{ scale: 1.05, boxShadow: "0 20px 25px -5px rgba(255, 255, 255, 0.2)" }}
               whileTap={{ scale: 0.95 }}
               onClick={() => { setIsAdminView(true); setDirectivoView("Admin"); navigate('/Admin'); }}
-              className="w-64 h-64 bg-blue-900/40 backdrop-blur-lg text-white rounded-2xl flex flex-col items-center justify-center gap-4 shadow-xl transition-all border border-blue-500/30"
+              className="w-64 h-64 bg-white/10 backdrop-blur-lg text-white rounded-2xl flex flex-col items-center justify-center gap-4 shadow-xl transition-all border border-white/20"
             >
-              <Shield className="w-16 h-16 text-blue-400" />
+              <Shield className="w-16 h-16 text-white" />
               <span className="text-2xl font-bold">Admin Panel</span>
             </motion.button>
           )}
@@ -266,12 +266,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
         {/* Sidebar */}
         <aside className="w-full md:w-56 border-r border-white/10 p-4 flex flex-col bg-white/5 backdrop-blur-md shrink-0">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 bg-blue-500/30 rounded-xl flex items-center justify-center shrink-0 border border-blue-500/20">
-              <BarChart3 className="text-blue-400 w-5 h-5" />
+            <div className="w-8 h-8 bg-white/10 rounded-xl flex items-center justify-center shrink-0 border border-white/20">
+              <BarChart3 className="text-white w-5 h-5" />
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-lg leading-none tracking-tight text-white">ORBIT</span>
-              <span className="text-[6px] leading-tight text-blue-400/60 font-bold uppercase tracking-[0.15em]">
+              <span className="text-[6px] leading-tight text-white/60 font-bold uppercase tracking-[0.15em]">
                 Organizational Report of Business Insights and Trends
               </span>
             </div>
@@ -294,10 +294,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                 <motion.button
                   key={option}
                   onClick={() => handleNavClick(option)}
-                  whileHover={{ x: 4, backgroundColor: isActive ? "" : "rgba(59, 130, 246, 0.15)" }}
+                  whileHover={{ x: 4, backgroundColor: isActive ? "" : "rgba(255, 255, 255, 0.1)" }}
                   whileTap={{ scale: 0.97 }}
                   className={`relative w-full flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-medium transition-all text-left outline-none ${
-                    isActive ? "text-white bg-blue-500/40 shadow-[0_0_15px_rgba(59,130,246,0.5)]" : "text-white/60 bg-blue-500/10 hover:bg-blue-500/20"
+                    isActive ? "text-white bg-white/20 shadow-[0_0_15px_rgba(255,255,255,0.3)]" : "text-white/60 bg-white/5 hover:bg-white/10"
                   }`}
                 >
                   {option === "Admin" ? <Shield className={`relative z-10 w-3 h-3 ${isActive ? "text-white" : ""}`} /> : <LayoutDashboard className={`relative z-10 w-3 h-3 ${isActive ? "text-white" : ""}`} />}
@@ -336,7 +336,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                 {(startDate || endDate) && (
                   <button 
                     onClick={() => { setStartDate(''); setEndDate(''); }}
-                    className="text-[8px] text-blue-400 hover:underline"
+                    className="text-[8px] text-white hover:underline"
                   >
                     Clear filters
                   </button>
@@ -389,7 +389,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
               <header className="flex flex-col md:flex-row md:items-center justify-between gap-1 relative z-10">
                 <div>
                   <h2 className="text-xl font-bold tracking-tight">Welcome back, {user.name}</h2>
-                  <p className="text-[8px] font-mono text-blue-400/60 uppercase tracking-widest">
+                  <p className="text-[8px] font-mono text-white/60 uppercase tracking-widest">
                     AUTH_ID: {user.rfc.substring(0, 8)}... // SESSION_ACTIVE // 
                     ROLE: {translateRole(user.vistaDash).toUpperCase()}
                     {user.clientName && ` // CLIENT: ${user.clientName.toUpperCase()}`}
@@ -397,8 +397,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-[8px] font-mono text-blue-400">
-                    <div className="w-1 h-1 rounded-full bg-blue-400 animate-pulse" />
+                  <div className="flex items-center gap-1.5 px-2 py-1 bg-white/10 border border-white/20 rounded-full text-[8px] font-mono text-white">
+                    <div className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
                     NODE_COMPASS: {user.compass}
                   </div>
                 </div>
@@ -412,12 +412,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                     {(() => {
                       const closedRate = data?.abiertos && data.abiertos > 0 ? (data.cerrados / data.abiertos) * 100 : 0;
                       const qaScore = data?.qa ?? 0;
-                      const perf = (closedRate * 0.4) + (qaScore * 0.6);
+                      const perf = Math.min((closedRate * 0.4) + (qaScore * 0.6), 100);
                       
                       const getPerfColor = (val: number) => {
-                        if (val >= 90) return { border: 'border-emerald-400', shadow: 'shadow-[0_0_15px_rgba(52,211,153,0.5)]', text: 'text-emerald-400', bg: 'bg-emerald-500/5', borderCard: 'border-emerald-500/30' };
-                        if (val >= 75) return { border: 'border-yellow-400', shadow: 'shadow-[0_0_15px_rgba(250,204,21,0.5)]', text: 'text-yellow-400', bg: 'bg-yellow-500/5', borderCard: 'border-yellow-500/30' };
-                        return { border: 'border-rose-400', shadow: 'shadow-[0_0_15px_rgba(251,113,133,0.5)]', text: 'text-rose-400', bg: 'bg-rose-500/5', borderCard: 'border-rose-500/30' };
+                        if (val >= 90) return { border: 'border-emerald-400', shadow: 'shadow-[0_0_15px_rgba(52,211,153,0.5)]', text: 'text-white', bg: 'bg-emerald-500/5', borderCard: 'border-emerald-500/30' };
+                        if (val >= 75) return { border: 'border-yellow-400', shadow: 'shadow-[0_0_15px_rgba(250,204,21,0.5)]', text: 'text-white', bg: 'bg-yellow-500/5', borderCard: 'border-yellow-500/30' };
+                        return { border: 'border-rose-400', shadow: 'shadow-[0_0_15px_rgba(251,113,133,0.5)]', text: 'text-white', bg: 'bg-rose-500/5', borderCard: 'border-rose-500/30' };
                       };
                       const pCol = getPerfColor(perf);
 
@@ -444,9 +444,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                       const getRankColor = (val: number | null | undefined) => {
                         if (val === null || val === undefined) return { border: 'border-white/20', shadow: 'shadow-none', text: 'text-white/60', bg: 'bg-white/5', borderCard: 'border-white/10' };
                         // Ranking: Low is better (Top 1% is Green, Top 90% is Red)
-                        if (val <= 10) return { border: 'border-emerald-400', shadow: 'shadow-[0_0_15px_rgba(52,211,153,0.5)]', text: 'text-emerald-400', bg: 'bg-emerald-500/5', borderCard: 'border-emerald-500/30' };
-                        if (val <= 30) return { border: 'border-yellow-400', shadow: 'shadow-[0_0_15px_rgba(250,204,21,0.5)]', text: 'text-yellow-400', bg: 'bg-yellow-500/5', borderCard: 'border-yellow-500/30' };
-                        return { border: 'border-rose-400', shadow: 'shadow-[0_0_15px_rgba(251,113,133,0.5)]', text: 'text-rose-400', bg: 'bg-rose-500/5', borderCard: 'border-rose-500/30' };
+                        if (val <= 10) return { border: 'border-emerald-400', shadow: 'shadow-[0_0_15px_rgba(52,211,153,0.5)]', text: 'text-white', bg: 'bg-emerald-500/5', borderCard: 'border-emerald-500/30' };
+                        if (val <= 30) return { border: 'border-yellow-400', shadow: 'shadow-[0_0_15px_rgba(250,204,21,0.5)]', text: 'text-white', bg: 'bg-yellow-500/5', borderCard: 'border-yellow-500/30' };
+                        return { border: 'border-rose-400', shadow: 'shadow-[0_0_15px_rgba(251,113,133,0.5)]', text: 'text-white', bg: 'bg-rose-500/5', borderCard: 'border-rose-500/30' };
                       };
                       const rCol = getRankColor(rank);
 
@@ -476,12 +476,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                       const qaScore = data?.qa ?? 0;
                       const closedRate = data?.abiertos && data.abiertos > 0 ? (data.cerrados / data.abiertos) * 100 : 0;
                       const backlogVal = typeof data?.backlog === 'number' ? data.backlog * 100 : 0;
-                      const bono = (qaScore * 0.3) + (closedRate * 0.3) + (backlogVal * 0.1);
+                      const bono = Math.min((qaScore * 0.3) + (closedRate * 0.3) + (backlogVal * 0.1), 100);
 
                       const getBonoColor = (val: number) => {
-                        if (val >= 85) return { border: 'border-emerald-400', shadow: 'shadow-[0_0_15px_rgba(52,211,153,0.5)]', text: 'text-emerald-400', bg: 'bg-emerald-500/5', borderCard: 'border-emerald-500/30' };
-                        if (val >= 60) return { border: 'border-yellow-400', shadow: 'shadow-[0_0_15px_rgba(250,204,21,0.5)]', text: 'text-yellow-400', bg: 'bg-yellow-500/5', borderCard: 'border-yellow-500/30' };
-                        return { border: 'border-rose-400', shadow: 'shadow-[0_0_15px_rgba(251,113,133,0.5)]', text: 'text-rose-400', bg: 'bg-rose-500/5', borderCard: 'border-rose-500/30' };
+                        if (val >= 85) return { border: 'border-emerald-400', shadow: 'shadow-[0_0_15px_rgba(52,211,153,0.5)]', text: 'text-white', bg: 'bg-emerald-500/5', borderCard: 'border-emerald-500/30' };
+                        if (val >= 60) return { border: 'border-yellow-400', shadow: 'shadow-[0_0_15px_rgba(250,204,21,0.5)]', text: 'text-white', bg: 'bg-yellow-500/5', borderCard: 'border-yellow-500/30' };
+                        return { border: 'border-rose-400', shadow: 'shadow-[0_0_15_rgba(251,113,133,0.5)]', text: 'text-white', bg: 'bg-rose-500/5', borderCard: 'border-rose-500/30' };
                       };
                       const bCol = getBonoColor(bono);
 
@@ -752,60 +752,60 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.1 }}
-                        className="glass-card p-2 flex items-center gap-3 border-blue-500/20"
+                        className="glass-card p-2 flex items-center gap-3 border-white/10"
                       >
-                        <div className="w-8 h-8 rounded-full border-2 border-blue-400 flex items-center justify-center text-[10px] font-bold shadow-[0_0_8px_rgba(59,130,246,0.3)] shrink-0">
+                        <div className="w-8 h-8 rounded-full border-2 border-white/40 flex items-center justify-center text-[10px] font-bold shadow-[0_0_8px_rgba(255,255,255,0.1)] shrink-0">
                           {loading ? "..." : data?.abiertos ?? 0}
                         </div>
-                        <p className="text-[7px] uppercase tracking-wider text-white/60 font-bold">Opened Cases</p>
+                        <p className="text-[7px] uppercase tracking-wider text-white/80 font-bold">Opened Cases</p>
                       </motion.div>
 
                       <motion.div 
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.15 }}
-                        className="glass-card p-2 flex items-center gap-3 border-blue-500/20"
+                        className="glass-card p-2 flex items-center gap-3 border-white/10"
                       >
-                        <div className="w-8 h-8 rounded-full border-2 border-blue-400 flex items-center justify-center text-[10px] font-bold shadow-[0_0_8px_rgba(59,130,246,0.3)] shrink-0">
+                        <div className="w-8 h-8 rounded-full border-2 border-white/40 flex items-center justify-center text-[10px] font-bold shadow-[0_0_8px_rgba(255,255,255,0.1)] shrink-0">
                           {loading ? "..." : data?.cerrados ?? 0}
                         </div>
-                        <p className="text-[7px] uppercase tracking-wider text-white/60 font-bold">Closed Cases</p>
+                        <p className="text-[7px] uppercase tracking-wider text-white/80 font-bold">Closed Cases</p>
                       </motion.div>
 
                       <motion.div 
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.18 }}
-                        className="glass-card p-2 flex items-center gap-3 border-blue-500/20"
+                        className="glass-card p-2 flex items-center gap-3 border-white/10"
                       >
-                        <div className="w-8 h-8 rounded-full border-2 border-blue-400 flex items-center justify-center text-[10px] font-bold shadow-[0_0_8px_rgba(59,130,246,0.3)] shrink-0">
+                        <div className="w-8 h-8 rounded-full border-2 border-white/40 flex items-center justify-center text-[10px] font-bold shadow-[0_0_8px_rgba(255,255,255,0.1)] shrink-0">
                           {loading ? "..." : (data?.abiertos && data.abiertos > 0 ? `${((data.cerrados / data.abiertos) * 100).toFixed(0)}%` : "0%")}
                         </div>
-                        <p className="text-[7px] uppercase tracking-wider text-white/60 font-bold">Closed Cases Rate</p>
+                        <p className="text-[7px] uppercase tracking-wider text-white/80 font-bold">Closed Cases Rate</p>
                       </motion.div>
 
                       <motion.div 
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.19 }}
-                        className="glass-card p-2 flex items-center gap-3 border-blue-500/20"
+                        className="glass-card p-2 flex items-center gap-3 border-white/10"
                       >
-                        <div className="w-8 h-8 rounded-full border-2 border-blue-400 flex items-center justify-center text-[10px] font-bold shadow-[0_0_8px_rgba(59,130,246,0.3)] shrink-0">
+                        <div className="w-8 h-8 rounded-full border-2 border-white/40 flex items-center justify-center text-[10px] font-bold shadow-[0_0_8px_rgba(255,255,255,0.1)] shrink-0">
                           {loading ? "..." : typeof data?.backlog === 'number' ? `${(data.backlog * 100).toFixed(0)}%` : "0%"}
                         </div>
-                        <p className="text-[7px] uppercase tracking-wider text-white/60 font-bold">Backlog</p>
+                        <p className="text-[7px] uppercase tracking-wider text-white/80 font-bold">Backlog</p>
                       </motion.div>
 
                       <motion.div 
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.2 }}
-                        className="glass-card p-2 flex items-center gap-3 border-blue-500/20"
+                        className="glass-card p-2 flex items-center gap-3 border-white/10"
                       >
-                        <div className="w-8 h-8 rounded-full border-2 border-blue-400 flex items-center justify-center text-[10px] font-bold shadow-[0_0_8px_rgba(59,130,246,0.3)] shrink-0">
+                        <div className="w-8 h-8 rounded-full border-2 border-white/40 flex items-center justify-center text-[10px] font-bold shadow-[0_0_8px_rgba(255,255,255,0.1)] shrink-0">
                           {loading ? "..." : typeof data?.qa === 'number' ? `${data.qa.toFixed(0)}%` : "0%"}
                         </div>
-                        <p className="text-[7px] uppercase tracking-wider text-white/60 font-bold">QA Score</p>
+                        <p className="text-[7px] uppercase tracking-wider text-white/80 font-bold">QA Score</p>
                       </motion.div>
 
                       {/* Attendance and Lateness Indicators */}
@@ -815,24 +815,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.21 }}
-                            className="glass-card p-2 flex items-center gap-3 border-blue-500/20"
+                            className="glass-card p-2 flex items-center gap-3 border-white/10"
                           >
-                            <div className="w-8 h-8 rounded-full border-2 border-blue-400 flex items-center justify-center text-[10px] font-bold shadow-[0_0_8px_rgba(59,130,246,0.3)] shrink-0">
+                            <div className="w-8 h-8 rounded-full border-2 border-white/40 flex items-center justify-center text-[10px] font-bold shadow-[0_0_8px_rgba(255,255,255,0.1)] shrink-0">
                               {loading ? "..." : data?.inasistencias ?? 0}
                             </div>
-                            <p className="text-[7px] uppercase tracking-wider text-white/60 font-bold">Inasistencias</p>
+                            <p className="text-[7px] uppercase tracking-wider text-white/80 font-bold">Inasistencias</p>
                           </motion.div>
 
                           <motion.div 
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.22 }}
-                            className="glass-card p-2 flex items-center gap-3 border-blue-500/20"
+                            className="glass-card p-2 flex items-center gap-3 border-white/10"
                           >
-                            <div className="w-8 h-8 rounded-full border-2 border-blue-400 flex items-center justify-center text-[10px] font-bold shadow-[0_0_8px_rgba(59,130,246,0.3)] shrink-0">
+                            <div className="w-8 h-8 rounded-full border-2 border-white/40 flex items-center justify-center text-[10px] font-bold shadow-[0_0_8px_rgba(255,255,255,0.1)] shrink-0">
                               {loading ? "..." : data?.retardos ?? 0}
                             </div>
-                            <p className="text-[7px] uppercase tracking-wider text-white/60 font-bold">Retardos</p>
+                            <p className="text-[7px] uppercase tracking-wider text-white/80 font-bold">Retardos</p>
                           </motion.div>
                         </>
                       )}

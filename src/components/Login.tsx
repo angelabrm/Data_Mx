@@ -28,11 +28,11 @@ export const Login: React.FC<LoginProps> = ({ onLogin, isLoading, error }) => {
           className="glass-card w-full max-w-md p-8 space-y-8 bg-white/5 backdrop-blur-xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
         >
           <div className="text-center">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full border-4 border-blue-400/30 mb-6">
-              <ShieldCheck className="w-10 h-10 text-blue-400" />
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full border-4 border-white/20 mb-6">
+              <ShieldCheck className="w-10 h-10 text-white" />
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-white">ORBIT</h1>
-            <p className="text-[10px] text-blue-400 uppercase tracking-[0.2em] font-bold mt-2">
+            <p className="text-[10px] text-white uppercase tracking-[0.2em] font-bold mt-2">
               Organizational Report of Business Insights and Trends
             </p>
             <p className="text-white/60 text-sm mt-6">Enter your RFC to access the dashboard</p>
@@ -65,7 +65,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, isLoading, error }) => {
                 className="flex h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all opacity-50 cursor-not-allowed"
                 disabled
               />
-              <p className="text-[10px] text-blue-400/60 italic">Password functionality coming soon</p>
+              <p className="text-[10px] text-white/40 italic">Password functionality coming soon</p>
             </div>
 
             {error && (
