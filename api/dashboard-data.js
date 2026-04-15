@@ -147,6 +147,100 @@ export default async function handler(req, res) {
 
     const chartData = Object.values(dateMap).sort((a, b) => a.date.localeCompare(b.date));
 
+    // Ranking Calculation
+    let rankingPercentile = null;
+    try {
+      const sheetName = process.env.GOOGLE_SHEET_NAME || "Roster";
+      const sheets = (await import("./_lib/google.js")).default;
+      const rosterResponse = await sheets.spreadsheets.values.get({
+        spreadsheetId: process.env.GOOGLE_SHEET_ID,
+        range: `${sheetName}!A:Z`,
+      });
+
+      const rows = rosterResponse.data.values;
+      if (rows && rows.length > 1) {
+        const headers = rows[0];
+        const docIdx = headers.indexOf("Documento");
+        const mesaIdx = headers.indexOf("MESA_");
+        const compassIdx = headers.indexOf("Compass");
+        const qaIdx = headers.indexOf("QA");
+
+        if (docIdx !== -1 && mesaIdx !== -1 && compassIdx !== -1) {
+          const currentUserRow = rows.find(r => r[docIdx] === rfc);
+          if (currentUserRow) {
+            const userMesa = currentUserRow[mesaIdx];
+            const teamMembers = rows.slice(1).filter(r => r[mesaIdx] === userMesa);
+
+            if (teamMembers.length > 0) {
+              // Calculate performance for each team member
+              const teamPerformances = await Promise.all(teamMembers.map(async (member) => {
+                const memberCompass = String(member[compassIdx] || "").split(',').map(s => s.trim());
+                const memberQA = String(qaIdx !== -1 ? member[qaIdx] || "" : "").split(',').map(s => s.trim()).filter(Boolean).filter(s => s.toLowerCase() !== 'none');
+
+                // Get metrics for this member
+                let mAbiertosWhere = memberCompass.some(s => s.toLowerCase() === 'none') ? 'WHERE 1=1' : 'WHERE LOWER(TRIM("Case Owner")) = ANY($1)';
+                let mCerradosWhere = memberCompass.some(s => s.toLowerCase() === 'none') ? 'WHERE 1=1' : 'WHERE LOWER(TRIM("Case Closed By")) = ANY($1)';
+                let mQAWhere = memberQA.length === 0 ? 'WHERE 1=1' : 'WHERE LOWER(TRIM("Agente")) = ANY($1)';
+
+                const mParamsCompass = [memberCompass.map(s => s.toLowerCase())];
+                const mParamsQA = [memberQA.map(s => s.toLowerCase())];
+
+                // Add date filters if present
+                if (startDate) {
+                  mAbiertosWhere += ` AND (CASE WHEN "Date Opened 2"::text ~ '^\\d{1,2}/\\d{1,2}/\\d{4}' THEN to_date(split_part(TRIM("Date Opened 2"::text), ' ', 1), 'FMDD/FMMM/YYYY') ELSE "Date Opened 2"::date END) >= $2::date`;
+                  mCerradosWhere += ` AND (CASE WHEN "Date Closed 2"::text ~ '^\\d{1,2}/\\d{1,2}/\\d{4}' THEN to_date(split_part(TRIM("Date Closed 2"::text), ' ', 1), 'FMDD/FMMM/YYYY') ELSE "Date Closed 2"::date END) >= $2::date`;
+                  mQAWhere += ` AND (CASE WHEN "Marca temporal"::text ~ '^\\d{1,2}/\\d{1,2}/\\d{4}' THEN to_date(split_part(TRIM("Marca temporal"::text), ' ', 1), 'FMDD/FMMM/YYYY') ELSE "Marca temporal"::date END) >= $2::date`;
+                  mParamsCompass.push(startDate);
+                  mParamsQA.push(startDate);
+                }
+                if (endDate) {
+                  const pIdx = startDate ? 3 : 2;
+                  mAbiertosWhere += ` AND (CASE WHEN "Date Opened 2"::text ~ '^\\d{1,2}/\\d{1,2}/\\d{4}' THEN to_date(split_part(TRIM("Date Opened 2"::text), ' ', 1), 'FMDD/FMMM/YYYY') ELSE "Date Opened 2"::date END) <= $${pIdx}::date`;
+                  mCerradosWhere += ` AND (CASE WHEN "Date Closed 2"::text ~ '^\\d{1,2}/\\d{1,2}/\\d{4}' THEN to_date(split_part(TRIM("Date Closed 2"::text), ' ', 1), 'FMDD/FMMM/YYYY') ELSE "Date Closed 2"::date END) <= $${pIdx}::date`;
+                  mQAWhere += ` AND (CASE WHEN "Marca temporal"::text ~ '^\\d{1,2}/\\d{1,2}/\\d{4}' THEN to_date(split_part(TRIM("Marca temporal"::text), ' ', 1), 'FMDD/FMMM/YYYY') ELSE "Marca temporal"::date END) <= $${pIdx}::date`;
+                  mParamsCompass.push(endDate);
+                  mParamsQA.push(endDate);
+                }
+
+                const [mAbiertosRes, mCerradosRes] = await Promise.all([
+                  pool.query(`SELECT COUNT(*) FROM "Abiertos" ${mAbiertosWhere}`, mParamsCompass),
+                  pool.query(`SELECT COUNT(*) FROM "Cerrados" ${mCerradosWhere}`, mParamsCompass)
+                ]);
+
+                const mAbiertos = parseInt(mAbiertosRes.rows[0].count);
+                const mCerrados = parseInt(mCerradosRes.rows[0].count);
+                const mClosedRate = mAbiertos > 0 ? (mCerrados / mAbiertos) * 100 : 0;
+
+                let mQA = 0;
+                if (memberQA.length > 0) {
+                  const mQARes = await pool.query(`SELECT AVG(${qaScoreFormula}) as avg_score FROM "QA_MX" ${mQAWhere}`, mParamsQA);
+                  mQA = parseFloat(mQARes.rows[0].avg_score || 0);
+                }
+
+                return (mClosedRate * 0.4) + (mQA * 0.6);
+              }));
+
+              // Current user performance
+              const currentPerf = ( (abiertosCount > 0 ? (cerradosCount / abiertosCount) * 100 : 0) * 0.4 ) + (qaScore * 0.6);
+              
+              // Calculate percentile
+              const betterThan = teamPerformances.filter(p => currentPerf > p).length;
+              const total = teamPerformances.length;
+              // Percentile: (total - rank + 1) / total * 100? No, "top x%" means 100 - percentile.
+              // If I'm better than 90 out of 100, I'm in the top 10%.
+              rankingPercentile = total > 0 ? Math.max(1, Math.round(100 - (betterThan / total * 100))) : 100;
+            }
+          }
+        }
+      }
+    } catch (rankErr) {
+      console.error("Ranking calculation error:", rankErr);
+    }
+
+    // Mock Attendance and Lateness data (invented for each agent)
+    const inasistencias = Math.floor(Math.random() * 3); // 0-2
+    const retardos = Math.floor(Math.random() * 5);      // 0-4
+
     res.json({
       abiertos: abiertosCount,
       cerrados: cerradosCount,
@@ -156,6 +250,9 @@ export default async function handler(req, res) {
       contestadas: parseFloat(rendimientoRes.rows[0]?.total_contestadas || 0),
       manejo: parseFloat(rendimientoRes.rows[0]?.total_manejo || 0),
       qa: qaScore,
+      rankingPercentile,
+      inasistencias,
+      retardos,
       chartData
     });
   } catch (error) {

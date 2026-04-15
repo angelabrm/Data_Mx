@@ -52,11 +52,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
   const [dynamicViews, setDynamicViews] = useState<{id: number, name: string}[]>([]);
   const [dynamicComponents, setDynamicComponents] = useState<any[]>([]);
   const [activeViewId, setActiveViewId] = useState<number | null>(null);
+  const [configRefreshTrigger, setConfigRefreshTrigger] = useState(0);
   
   const isLeader = user.vistaDash.startsWith("Líder");
   const isManager = user.vistaDash === "Manager";
   const isDirectivo = user.vistaDash === "Directivo";
   const effectiveRole = isManager ? `Líder ${managerView}` : user.vistaDash;
+  const isDynamic = dynamicViews.length > 0;
 
   // Date filter state - Default to January of current year
   const [startDate, setStartDate] = useState<string>(() => {
@@ -71,19 +73,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
   useEffect(() => {
     const fetchUserConfig = async () => {
       try {
-        const res = await fetch(`/api/user-config?rfc=${user.rfc}`);
+        const res = await fetch(`/api/user-config?rfc=${user.rfc}&roleName=${encodeURIComponent(user.vistaDash)}`);
         const result = await res.json();
         if (result.views && result.views.length > 0) {
           setDynamicViews(result.views);
           setDynamicComponents(result.components || []);
           setActiveViewId(result.views[0].id);
+        } else {
+          setDynamicViews([]);
+          setDynamicComponents([]);
+          setActiveViewId(null);
         }
       } catch (err) {
         console.error("Error fetching user config:", err);
       }
     };
     fetchUserConfig();
-  }, [user.rfc]);
+  }, [user.rfc, configRefreshTrigger]);
 
   useEffect(() => {
     if (isLeader || isManager) {
@@ -373,7 +379,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
         {/* Main Content */}
         <main className="flex-1 p-4 md:p-5 space-y-3 overflow-hidden bg-white/5 backdrop-blur-sm no-scrollbar relative">
           {isAdminView ? (
-            <AdminPanel />
+            <AdminPanel onConfigChange={() => {
+              setConfigRefreshTrigger(prev => prev + 1);
+              setIsAdminView(false);
+              navigate('/');
+            }} />
           ) : (
             <>
               <header className="flex flex-col md:flex-row md:items-center justify-between gap-1 relative z-10">
@@ -394,75 +404,116 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                 </div>
               </header>
 
-              {/* Main Dashboard Grid */}
-              <div className="flex flex-col lg:flex-row gap-4 relative z-10 h-[calc(100%-4rem)]">
-                {/* Left Column: Stats and Charts */}
-                <div className="flex-1 flex flex-col gap-4 min-h-0">
-                  {/* Stats Grid */}
-                  {(!activeViewId || dynamicComponents.some(c => c.view_id === activeViewId && c.type === 'stats')) && (
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 shrink-0">
-                      <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="glass-card p-3 flex items-center gap-3"
-                      >
-                        <div className="w-10 h-10 rounded-full border-[3px] border-blue-400 flex items-center justify-center text-xs font-bold shadow-[0_0_10px_rgba(59,130,246,0.5)] shrink-0">
-                          {loading ? "..." : data?.abiertos ?? 0}
-                        </div>
-                        <div>
-                          <p className="text-[8px] uppercase tracking-wider text-white/60 font-bold">Opened Cases</p>
-                        </div>
-                      </motion.div>
+              {/* Main Dashboard Container */}
+              <div className="flex flex-col gap-4 relative z-10 h-[calc(100%-4rem)]">
+                {/* Full Width Hero Stats */}
+                {(isDynamic ? dynamicComponents.some(c => c.view_id === activeViewId && c.type === 'stats') : true) && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 shrink-0">
+                    {(() => {
+                      const closedRate = data?.abiertos && data.abiertos > 0 ? (data.cerrados / data.abiertos) * 100 : 0;
+                      const qaScore = data?.qa ?? 0;
+                      const perf = (closedRate * 0.4) + (qaScore * 0.6);
+                      
+                      const getPerfColor = (val: number) => {
+                        if (val >= 90) return { border: 'border-emerald-400', shadow: 'shadow-[0_0_15px_rgba(52,211,153,0.5)]', text: 'text-emerald-400', bg: 'bg-emerald-500/5', borderCard: 'border-emerald-500/30' };
+                        if (val >= 75) return { border: 'border-yellow-400', shadow: 'shadow-[0_0_15px_rgba(250,204,21,0.5)]', text: 'text-yellow-400', bg: 'bg-yellow-500/5', borderCard: 'border-yellow-500/30' };
+                        return { border: 'border-rose-400', shadow: 'shadow-[0_0_15px_rgba(251,113,133,0.5)]', text: 'text-rose-400', bg: 'bg-rose-500/5', borderCard: 'border-rose-500/30' };
+                      };
+                      const pCol = getPerfColor(perf);
 
-                      <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.15 }}
-                        className="glass-card p-3 flex items-center gap-3"
-                      >
-                        <div className="w-10 h-10 rounded-full border-[3px] border-emerald-400 flex items-center justify-center text-xs font-bold shadow-[0_0_10px_rgba(52,211,153,0.5)] shrink-0">
-                          {loading ? "..." : data?.cerrados ?? 0}
-                        </div>
-                        <div>
-                          <p className="text-[8px] uppercase tracking-wider text-white/60 font-bold">Closed Cases</p>
-                        </div>
-                      </motion.div>
+                      return (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.22 }}
+                          className={`glass-card p-4 flex items-center gap-4 ${pCol.borderCard} ${pCol.bg}`}
+                        >
+                          <div className={`w-12 h-12 rounded-full border-[3px] ${pCol.border} flex items-center justify-center text-sm font-bold ${pCol.shadow} shrink-0`}>
+                            {loading ? "..." : `${perf.toFixed(0)}%`}
+                          </div>
+                          <div>
+                            <p className={`text-[10px] uppercase tracking-[0.2em] ${pCol.text} font-black`}>Performance</p>
+                            <p className="text-[7px] text-white/40 mt-0.5">Global Efficiency Index</p>
+                          </div>
+                        </motion.div>
+                      );
+                    })()}
 
-                      <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.19 }}
-                        className="glass-card p-3 flex items-center gap-3"
-                      >
-                        <div className="w-10 h-10 rounded-full border-[3px] border-amber-400 flex items-center justify-center text-xs font-bold shadow-[0_0_10px_rgba(251,191,36,0.5)] shrink-0">
-                          {loading ? "..." : typeof data?.backlog === 'number' ? `${(data.backlog * 100).toFixed(0)}%` : "0%"}
-                        </div>
-                        <div>
-                          <p className="text-[8px] uppercase tracking-wider text-white/60 font-bold">Backlog</p>
-                        </div>
-                      </motion.div>
+                    {(() => {
+                      const rank = data?.rankingPercentile;
+                      const getRankColor = (val: number | null | undefined) => {
+                        if (val === null || val === undefined) return { border: 'border-white/20', shadow: 'shadow-none', text: 'text-white/60', bg: 'bg-white/5', borderCard: 'border-white/10' };
+                        // Ranking: Low is better (Top 1% is Green, Top 90% is Red)
+                        if (val <= 10) return { border: 'border-emerald-400', shadow: 'shadow-[0_0_15px_rgba(52,211,153,0.5)]', text: 'text-emerald-400', bg: 'bg-emerald-500/5', borderCard: 'border-emerald-500/30' };
+                        if (val <= 30) return { border: 'border-yellow-400', shadow: 'shadow-[0_0_15px_rgba(250,204,21,0.5)]', text: 'text-yellow-400', bg: 'bg-yellow-500/5', borderCard: 'border-yellow-500/30' };
+                        return { border: 'border-rose-400', shadow: 'shadow-[0_0_15px_rgba(251,113,133,0.5)]', text: 'text-rose-400', bg: 'bg-rose-500/5', borderCard: 'border-rose-500/30' };
+                      };
+                      const rCol = getRankColor(rank);
 
-                      <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="glass-card p-3 flex items-center gap-3"
-                      >
-                        <div className="w-10 h-10 rounded-full border-[3px] border-purple-400 flex items-center justify-center text-xs font-bold shadow-[0_0_10px_rgba(168,85,247,0.5)] shrink-0">
-                          {loading ? "..." : typeof data?.qa === 'number' ? `${data.qa.toFixed(0)}%` : "0%"}
-                        </div>
-                        <div>
-                          <p className="text-[8px] uppercase tracking-wider text-white/60 font-bold">QA Score</p>
-                        </div>
-                      </motion.div>
-                    </div>
-                  )}
+                      return (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.23 }}
+                          className={`glass-card p-4 flex items-center gap-4 ${rCol.borderCard} ${rCol.bg}`}
+                        >
+                          <div className={`w-12 h-12 rounded-full border-[3px] ${rCol.border} flex items-center justify-center text-sm font-bold ${rCol.shadow} shrink-0`}>
+                            {loading ? "..." : (rank ? `${rank}%` : "N/A")}
+                          </div>
+                          <div>
+                            <p className={`text-[10px] uppercase tracking-[0.2em] ${rCol.text} font-black`}>Team Ranking</p>
+                            <p className="text-[7px] text-white/40 mt-0.5 leading-relaxed max-w-[150px]">
+                              {rank 
+                                ? `Your performance places you among the top ${rank}% of team members` 
+                                : "Calculating position..."}
+                            </p>
+                          </div>
+                        </motion.div>
+                      );
+                    })()}
+
+                    {(() => {
+                      const qaScore = data?.qa ?? 0;
+                      const closedRate = data?.abiertos && data.abiertos > 0 ? (data.cerrados / data.abiertos) * 100 : 0;
+                      const backlogVal = typeof data?.backlog === 'number' ? data.backlog * 100 : 0;
+                      const bono = (qaScore * 0.3) + (closedRate * 0.3) + (backlogVal * 0.1);
+
+                      const getBonoColor = (val: number) => {
+                        if (val >= 85) return { border: 'border-emerald-400', shadow: 'shadow-[0_0_15px_rgba(52,211,153,0.5)]', text: 'text-emerald-400', bg: 'bg-emerald-500/5', borderCard: 'border-emerald-500/30' };
+                        if (val >= 60) return { border: 'border-yellow-400', shadow: 'shadow-[0_0_15px_rgba(250,204,21,0.5)]', text: 'text-yellow-400', bg: 'bg-yellow-500/5', borderCard: 'border-yellow-500/30' };
+                        return { border: 'border-rose-400', shadow: 'shadow-[0_0_15px_rgba(251,113,133,0.5)]', text: 'text-rose-400', bg: 'bg-rose-500/5', borderCard: 'border-rose-500/30' };
+                      };
+                      const bCol = getBonoColor(bono);
+
+                      return (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.24 }}
+                          className={`glass-card p-4 flex items-center gap-4 ${bCol.borderCard} ${bCol.bg}`}
+                        >
+                          <div className={`w-12 h-12 rounded-full border-[3px] ${bCol.border} flex items-center justify-center text-sm font-bold ${bCol.shadow} shrink-0`}>
+                            {loading ? "..." : `${bono.toFixed(0)}%`}
+                          </div>
+                          <div>
+                            <p className={`text-[10px] uppercase tracking-[0.2em] ${bCol.text} font-black`}>Bono</p>
+                            <p className="text-[7px] text-white/40 mt-0.5">Incentive Achievement</p>
+                          </div>
+                        </motion.div>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {/* Content Grid (Charts + Sidebar) */}
+                <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0">
+                  {/* Left Column: Charts */}
+                  <div className="flex-1 flex flex-col gap-4 min-h-0">
 
                   {/* Charts Section */}
                   <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-3 min-h-0">
                     {/* Cases Chart */}
-                    {(!activeViewId || dynamicComponents.some(c => c.view_id === activeViewId && c.type === 'cases_chart')) && (
+                    {(isDynamic ? dynamicComponents.some(c => c.view_id === activeViewId && c.type === 'cases_chart') : true) && (
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -541,7 +592,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                     )}
 
                     {/* Calls Chart */}
-                    {(!activeViewId || dynamicComponents.some(c => c.view_id === activeViewId && c.type === 'calls_chart')) && (
+                    {(isDynamic ? dynamicComponents.some(c => c.view_id === activeViewId && c.type === 'calls_chart') : true) && (
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -620,7 +671,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                     )}
 
                     {/* QA Chart */}
-                    {(!activeViewId || dynamicComponents.some(c => c.view_id === activeViewId && c.type === 'qa_chart')) && (
+                    {(isDynamic ? dynamicComponents.some(c => c.view_id === activeViewId && c.type === 'qa_chart') : true) && (
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -692,9 +743,103 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                   </div>
                 </div>
 
-                {/* Right Column: Gauges (Airplane Dashboard Style) */}
-                {(!activeViewId || dynamicComponents.some(c => c.view_id === activeViewId && c.type === 'gauges')) && (
-                  <div className="w-full lg:w-40 space-y-3 shrink-0">
+                {/* Right Column: Gauges and Secondary Stats */}
+                {(isDynamic ? dynamicComponents.some(c => c.view_id === activeViewId && (c.type === 'gauges' || c.type === 'stats')) : true) && (
+                  <div className="w-full lg:w-48 space-y-3 shrink-0 overflow-y-auto pr-1 custom-scrollbar">
+                    {/* Secondary Stats (Moved from top) */}
+                    <div className="space-y-2">
+                      <motion.div 
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="glass-card p-2 flex items-center gap-3 border-blue-500/20"
+                      >
+                        <div className="w-8 h-8 rounded-full border-2 border-blue-400 flex items-center justify-center text-[10px] font-bold shadow-[0_0_8px_rgba(59,130,246,0.3)] shrink-0">
+                          {loading ? "..." : data?.abiertos ?? 0}
+                        </div>
+                        <p className="text-[7px] uppercase tracking-wider text-white/60 font-bold">Opened Cases</p>
+                      </motion.div>
+
+                      <motion.div 
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.15 }}
+                        className="glass-card p-2 flex items-center gap-3 border-blue-500/20"
+                      >
+                        <div className="w-8 h-8 rounded-full border-2 border-blue-400 flex items-center justify-center text-[10px] font-bold shadow-[0_0_8px_rgba(59,130,246,0.3)] shrink-0">
+                          {loading ? "..." : data?.cerrados ?? 0}
+                        </div>
+                        <p className="text-[7px] uppercase tracking-wider text-white/60 font-bold">Closed Cases</p>
+                      </motion.div>
+
+                      <motion.div 
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.18 }}
+                        className="glass-card p-2 flex items-center gap-3 border-blue-500/20"
+                      >
+                        <div className="w-8 h-8 rounded-full border-2 border-blue-400 flex items-center justify-center text-[10px] font-bold shadow-[0_0_8px_rgba(59,130,246,0.3)] shrink-0">
+                          {loading ? "..." : (data?.abiertos && data.abiertos > 0 ? `${((data.cerrados / data.abiertos) * 100).toFixed(0)}%` : "0%")}
+                        </div>
+                        <p className="text-[7px] uppercase tracking-wider text-white/60 font-bold">Closed Cases Rate</p>
+                      </motion.div>
+
+                      <motion.div 
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.19 }}
+                        className="glass-card p-2 flex items-center gap-3 border-blue-500/20"
+                      >
+                        <div className="w-8 h-8 rounded-full border-2 border-blue-400 flex items-center justify-center text-[10px] font-bold shadow-[0_0_8px_rgba(59,130,246,0.3)] shrink-0">
+                          {loading ? "..." : typeof data?.backlog === 'number' ? `${(data.backlog * 100).toFixed(0)}%` : "0%"}
+                        </div>
+                        <p className="text-[7px] uppercase tracking-wider text-white/60 font-bold">Backlog</p>
+                      </motion.div>
+
+                      <motion.div 
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.2 }}
+                        className="glass-card p-2 flex items-center gap-3 border-blue-500/20"
+                      >
+                        <div className="w-8 h-8 rounded-full border-2 border-blue-400 flex items-center justify-center text-[10px] font-bold shadow-[0_0_8px_rgba(59,130,246,0.3)] shrink-0">
+                          {loading ? "..." : typeof data?.qa === 'number' ? `${data.qa.toFixed(0)}%` : "0%"}
+                        </div>
+                        <p className="text-[7px] uppercase tracking-wider text-white/60 font-bold">QA Score</p>
+                      </motion.div>
+
+                      {/* Attendance and Lateness Indicators */}
+                      {(user.vistaDash === "Agente CAC" || user.vistaDash === "Agente Fleet" || user.vistaDash === "Agente Premium") && (
+                        <>
+                          <motion.div 
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.21 }}
+                            className="glass-card p-2 flex items-center gap-3 border-blue-500/20"
+                          >
+                            <div className="w-8 h-8 rounded-full border-2 border-blue-400 flex items-center justify-center text-[10px] font-bold shadow-[0_0_8px_rgba(59,130,246,0.3)] shrink-0">
+                              {loading ? "..." : data?.inasistencias ?? 0}
+                            </div>
+                            <p className="text-[7px] uppercase tracking-wider text-white/60 font-bold">Inasistencias</p>
+                          </motion.div>
+
+                          <motion.div 
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.22 }}
+                            className="glass-card p-2 flex items-center gap-3 border-blue-500/20"
+                          >
+                            <div className="w-8 h-8 rounded-full border-2 border-blue-400 flex items-center justify-center text-[10px] font-bold shadow-[0_0_8px_rgba(59,130,246,0.3)] shrink-0">
+                              {loading ? "..." : data?.retardos ?? 0}
+                            </div>
+                            <p className="text-[7px] uppercase tracking-wider text-white/60 font-bold">Retardos</p>
+                          </motion.div>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="h-px bg-white/5 my-2" />
+
                     {(() => {
                       const closedRate = data?.abiertos && data.abiertos > 0 
                         ? (data.cerrados / data.abiertos) * 100 
@@ -739,6 +884,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, set
                   </div>
                 )}
               </div>
+            </div>
             </>
           )}
         </main>

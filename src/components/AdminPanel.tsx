@@ -56,7 +56,11 @@ interface Override {
   service_desk_name?: string;
 }
 
-export const AdminPanel: React.FC = () => {
+interface AdminPanelProps {
+  onConfigChange?: () => void;
+}
+
+export const AdminPanel: React.FC<AdminPanelProps> = ({ onConfigChange }) => {
   const [clients, setClients] = useState<Client[]>([]);
   const [serviceDesks, setServiceDesks] = useState<ServiceDesk[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -73,6 +77,8 @@ export const AdminPanel: React.FC = () => {
   
   const [statusMsg, setStatusMsg] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
   // Inline form states
   const [newClientName, setNewClientName] = useState('');
@@ -127,6 +133,7 @@ export const AdminPanel: React.FC = () => {
       });
       setNewClientName('');
       showStatus("Client added");
+      setHasChanges(true);
       fetchData();
     } catch (err) {
       showStatus("Failed to add client", "error");
@@ -143,6 +150,7 @@ export const AdminPanel: React.FC = () => {
       });
       setNewServiceDeskName('');
       showStatus("Service Desk added");
+      setHasChanges(true);
       fetchData();
     } catch (err) {
       showStatus("Failed to add service desk", "error");
@@ -159,6 +167,7 @@ export const AdminPanel: React.FC = () => {
       });
       setNewRoleName('');
       showStatus("Role added");
+      setHasChanges(true);
       fetchData();
     } catch (err) {
       showStatus("Failed to add role", "error");
@@ -175,6 +184,7 @@ export const AdminPanel: React.FC = () => {
       });
       setNewViewName('');
       showStatus("View added");
+      setHasChanges(true);
       fetchData();
     } catch (err) {
       showStatus("Failed to add view", "error");
@@ -191,6 +201,7 @@ export const AdminPanel: React.FC = () => {
       });
       setNewCompTitle('');
       showStatus("Component added");
+      setHasChanges(true);
       fetchData();
     } catch (err) {
       showStatus("Failed to add component", "error");
@@ -209,6 +220,7 @@ export const AdminPanel: React.FC = () => {
       setNewOverrideRfc('');
       setNewOverrideRoleId('');
       showStatus("Override added");
+      setHasChanges(true);
       fetchData();
     } catch (err) {
       showStatus("Failed to add override", "error");
@@ -219,9 +231,27 @@ export const AdminPanel: React.FC = () => {
     try {
       await fetch(`/api/admin/config?type=${type}&id=${id}`, { method: 'DELETE' });
       showStatus(`${type} deleted`);
+      setHasChanges(true);
       fetchData();
     } catch (err) {
       showStatus(`Failed to delete ${type}`, "error");
+    }
+  };
+
+  const handleSaveChanges = async () => {
+    setIsSaving(true);
+    try {
+      // Since changes are already saved to DB on each action,
+      // we just need to notify the parent to refresh the dashboard
+      if (onConfigChange) {
+        onConfigChange();
+      }
+      showStatus("All changes applied!");
+      setHasChanges(false);
+    } catch (err) {
+      showStatus("Error applying changes", "error");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -252,6 +282,7 @@ export const AdminPanel: React.FC = () => {
                 const res = await fetch('/api/admin/init', { method: 'POST' });
                 const data = await res.json();
                 showStatus(data.message || data.error);
+                setHasChanges(true);
                 fetchData();
               } catch (err) {
                 showStatus("Init failed", "error");
@@ -262,6 +293,18 @@ export const AdminPanel: React.FC = () => {
             className="px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 transition-all disabled:opacity-50"
           >
             {isInitializing ? 'Initialising...' : 'Init DB'}
+          </button>
+          <button 
+            onClick={handleSaveChanges}
+            disabled={isSaving}
+            className={`px-3 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 transition-all ${
+              hasChanges 
+                ? 'bg-blue-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]' 
+                : 'bg-white/5 text-white/40 border border-white/10'
+            }`}
+          >
+            <Save size={10} />
+            {isSaving ? 'Saving...' : 'Save Changes'}
           </button>
           <button 
             onClick={() => setActiveTab('roles')}

@@ -1,7 +1,7 @@
 import pool from "./_lib/db.js";
 
 export default async function handler(req, res) {
-  const { rfc } = req.query;
+  const { rfc, roleName } = req.query;
 
   if (!rfc) {
     return res.status(400).json({ error: "RFC is required" });
@@ -12,13 +12,19 @@ export default async function handler(req, res) {
     const overrideRes = await pool.query('SELECT role_id FROM admin_user_overrides WHERE rfc = $1', [rfc]);
     
     let roleId = null;
-    if (overrideRes.rows.length > 0) {
+    if (overrideRes.rows.length > 0 && overrideRes.rows[0].role_id) {
       roleId = overrideRes.rows[0].role_id;
     }
 
+    if (!roleId && roleName) {
+      // Fallback: Try to find a role by name
+      const roleRes = await pool.query('SELECT id FROM admin_roles WHERE name = $1 LIMIT 1', [roleName]);
+      if (roleRes.rows.length > 0) {
+        roleId = roleRes.rows[0].id;
+      }
+    }
+
     if (!roleId) {
-      // Fallback: Try to find a role by name matching the user's vistaDash (this is a bit loose)
-      // But for now, let's assume overrides are the source of truth for dynamic config.
       return res.json({ views: [], components: [] });
     }
 
